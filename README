@@ -2,15 +2,23 @@ NAME
     Apache::AuthCookie - Perl Authentication and Authorization via cookies
 
 SYNOPSIS
-    `use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);'
+    Make sure your mod_perl is at least 1.24, with StackedHandlers,
+    MethodHandlers, Authen, and Authz compiled in.
 
      # In httpd.conf or .htaccess:
      PerlModule Sample::AuthCookieHandler
      PerlSetVar WhatEverPath /
      PerlSetVar WhatEverLoginScript /login.pl
      
-     # The following line is optional
+     # The following line is optional - it allows you to set the domain
+     # scope of your cookie.  Default is the current domain.
      PerlSetVar WhatEverDomain .yourdomain.com
+
+     # Use this to only send over a secure connection
+     PerlSetVar WhatEverSecure 1
+
+     # Usually documents are uncached - turn off here
+     PerlSetVar WhatEverCache 1
 
      # These documents require user to be logged in.
      <Location /protected>
@@ -138,11 +146,11 @@ DESCRIPTION
                    V                       \             /     False
       +-----------------------------------+ \           /
       | Tell Apache to set Expires header,|  \         /
-      | set no-cache Pragma header, set   |   \       /
-      | user to user ID returned by       |    \     /
-      | authen_ses_key, set authentication|     \   /
-      | to our type (e.g. AuthCookie).    |      \ /
-      +-----------------------------------+       V
+      | set user to user ID returned by   |   \       /
+      | authen_ses_key, set authentication|    \     /
+      | to our type (e.g. AuthCookie).    |     \   /
+      +-----------------------------------+      \ /
+                                                  V
              (---------------------)              ^
              ( Request a protected )              |
              ( page, user has a    )--------------+
@@ -231,10 +239,22 @@ METHODS
         set the user's cookie and redirect to the URL contained in the
         `"destination"' submitted form field.
 
+    * login_form()
+        This method is responsible for displaying the login form. The
+        default implementation will make an internal redirect and display
+        the URL you specified with the `PerlSetVar WhatEverLoginForm'
+        configuration directive. You can overwrite this method to provide
+        your own mechanism.
+
     * logout()
         This is simply a convenience method that unsets the session key for
         you. You can call it in your logout scripts. Usually this looks like
         `$r->auth_type->logout($r);'.
+
+    * send_cookie($session_key)
+        By default this method simply sends out the session key you give it.
+        If you need to change the default behavior (perhaps to update a
+        timestamp in the key) you can override this method.
 
     * recognize_user()
         If the user has provided a valid session key but the document isn't

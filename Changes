@@ -1,8 +1,57 @@
+Version: 2.010  Date: 2000/06/17 01:37:16
+   (merged changes from sub-releases into main CVS branch.  Been living
+   in CVS hell.  My CVS-hubris got the better of me, tried to do things
+   with tags & soforth and wound up severely confused.  Thus the version
+   numbers jumped a bit.)
+   
+   Made some minor documentation updates.
+
+
+Version: 2.009  Date: 2000/06/14 15:54:00
+   *** empty log message ***
+
+
+Version: 2.008  Date: 2000/06/14 15:36:12
+   Instead of replacing the Set-Cookie header when we set the cookie, add
+   to it.  This means we won't clobber other folks' unrelated cookies
+   when we set ours.  It also means you need at least mod_perl version
+   1.24 (I think).  [rlocke@infiniteinfo.com (Robert Locke)]
+
+
+Version: 2.007.002.001  Date: 2000/05/14 18:06:30
+   Added a PerlSetVar *Cache parameter that you can set to a true value
+   to allow cacheing.  Also removed cache control from regular requests -
+   cacheing still happens on login & logout.  [asparks@cpd.harris.com
+   (Alan Sparks) and dtaylor@vialogix.com (Drew Taylor)]
+   
+   Split off the login-form-displaying code into its own method, called
+   login_form().  Can be overridden in subclasses.  The default method
+   uses $r->custom_response() to display the login. [richter@ecos.de
+   (Gerald Richter)]
+   
+   Added documentation for the send_cookie() method.
+
+
+Version: 2.007.001.001  Date: 2000/04/29 20:03:51
+   Created the send_cookie() method, which just creates the cookie and
+   calls $r->err_header_out to send it to the browser.  It is
+   occasionally useful to override this method if you need to change the
+   value of the cookie before sending it out (for instance, to update a
+   timestamp).  [mschout@gkg.net (Michael J Schout)]
+   
+   Changed the _cookie_string() method to cookie_string().
+   
+   Added a PerlSetVar configuration directive "{YourAuth}Secure" which
+   will secure cookies (i.e. only send them over a secure connection).
+   [mschout@gkg.net (Michael J Schout)]
+
+
 Version: 2.007  Date: 2000/04/15 15:27:02
+   branches:  2.7.1;  2.7.2;
    If the browser sends a cookie but it's not one related to our
    authentication, we formerly sent a blank cookie to the authentication
    methods.  Now we act as if no cookie was sent.
-   [errorasparks@cpd.harris.com (Alan Sparks)]
+   [asparks@cpd.harris.com (Alan Sparks)]
    
    Fixed a server error that occurred when a certain user was required,
    but a different valid user was logged in.
