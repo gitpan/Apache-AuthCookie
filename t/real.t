@@ -8,7 +8,9 @@ use Apache::Test;
 use Apache::TestUtil;
 use Apache::TestRequest qw(GET POST GET_BODY);
 
-plan tests => 17;
+Apache::TestRequest::user_agent( reset => 1, requests_redirectable => 0 );
+
+plan tests => 19;
 
 ok 1;  # we loaded.
 
@@ -29,6 +31,8 @@ ok test_14();
 ok test_15();
 ok test_16();
 ok test_17();
+ok test_18();
+ok test_19();
 
 sub test_3 {
     my $url = '/docs/index.html';
@@ -233,7 +237,6 @@ sub test_15 {
     return ($r->code() == 403);
 }
 
-# should succeed (any requirement is met)
 sub test_16 {
     my $r = POST('/docs/protected/get_me.html', [
         foo => 'bar'
@@ -259,12 +262,40 @@ sub test_17 {
     return $data eq $expected;
 }
 
+# should succeed (any requirement is met)
+sub test_18 {
+    my $r = GET(
+        '/docs/authany/get_me.html',
+        Cookie => 'Sample::AuthCookieHandler_WhatEver=some-user:mypassword'
+    );
+
+    my $data = $r->content;
+    my $expected = get_expected('18');
+
+    print "# expected: $expected\n";
+    print "# got: $data\n";
+
+    return $data eq $expected;
+}
+
+# should fail: AuthAny and NONE of the requirements are met.
+sub test_19 {
+    my $r = GET(
+        '/docs/authany/get_me.html',
+        Cookie => 'Sample::AuthCookieHandler_WhatEver=nouser:mypassword'
+    );
+
+    print "code: ", $r->code(), "\n";
+
+    return ($r->code() == 403);
+}
+
 # get the "expected output" file for a given test and return its contents.
 sub get_expected {
     my ($fname) = @_;
 
     local $/ = undef;
-    open EXPFH, "< check/$fname" or die "cant oipen check/$fname: $!";
+    open EXPFH, "< t/check/$fname" or die "cant open check/$fname: $!";
     my $data = <EXPFH>;
     close EXPFH;
 
