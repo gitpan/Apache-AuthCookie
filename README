@@ -4,11 +4,8 @@ NAME
 SYNOPSIS
     `use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);'
 
-     # In mod_perl startup script:
-     use Sample::AuthCookieHandler;
-
      # In httpd.conf or .htaccess:
-
+     PerlModule Sample::AuthCookieHandler
      PerlSetVar WhatEverPath /
      PerlSetVar WhatEverLoginScript /login.pl
 
@@ -152,8 +149,8 @@ DESCRIPTION
         map it back to the originally authenticated user ID.
 
 UPGRADING FROM VERSION 1.4
-    There are a couple of interface changes that you need to be aware of
-    when migrating from version 1.4 to 2.0. First, the authen() and authz()
+    There are a few interface changes that you need to be aware of when
+    migrating from version 1.x to 2.x. First, the authen() and authz()
     methods are now deprecated, replaced by the new authenticate() and
     authorize() methods. The old methods will go away in a couple versions,
     but are maintained intact in this version to ease the task of upgrading.
@@ -162,46 +159,23 @@ UPGRADING FROM VERSION 1.4
     Second, when you change to the new method names (see previous
     paragraph), you must change the action of your login forms to the
     location /LOGIN (or whatever URL will call your module's login()
-    method).
+    method). You may also want to change their METHOD to POST instead of
+    GET, since that's much safer and nicer to look at (but you can leave it
+    as GET if you bloody well want to, for some god-unknown reason).
 
-    Third, you must put another field in your login forms (see the section
-    on "THE LOGIN SCRIPT" below) that indicates how requests should be
-    redirected after a successful login.
+    Third, you must change your login forms (see the section on "THE LOGIN
+    SCRIPT" below) to indicate how requests should be redirected after a
+    successful login.
+
+    Fourth, you might want to take advantage of the new `logout()' method,
+    though you certainly don't have to.
 
 EXAMPLE
-    NOTE: THE FOLLOWING EXAMPLE CODE IS BASED ON AN OLD VERSION OF
-    Apache::AuthCookie, AND IS NO LONGER SUPPORTED. I'll update the example
-    stuff as soon as I get a chance. For now, please see the sample
-    configuration code at the top of this document.
-
-  Install the sample
-
-    1.  Install eg/Sample into the site_perl directory in your perl5 library
-        directory.
-
-    2.  Install eg/unprotected into your Apache document root directory.
-
-    3.  Add `use Sample::AuthCookieHandler;' to your mod_perl startup script or
-        `Sample::AuthCookieHandler' to your PerlModule configuration
-        directive.
-
-    4.  Restart Apache so mod_perl picks up `Sample::AuthCookieHandler'.
-
-  Try out the sample
-
-    1.  Try to access /unprotected/protected/get_me.html. You should instead get
-        a form requesting a login and password. The sample will validate two
-        users. The first is login => programmer and password => Hero and the
-        second is login => some-user with no/any password. You might want to
-        set your browser to show you cookies before accepting them. Then you
-        can see what AuthCookie is generating.
-
-    2.  As distributed, the .htaccess file in eg/unprotected/protected will
-        allow either of these user to access the document. However if you
-        change the line `require valid-user' to `require dwarf' in .htaccess
-        only the user "programmer" will have access. Look at the
-        authorization function `dwarf()' in eg/Sample/AuthCookieHandler.pm
-        to see how this works.
+    For an example of how to use Apache::AuthCookie, you may want to check
+    out the test suite, which runs AuthCookie through a few of its paces.
+    The documents are located in t/eg/, and you may want to peruse t/real.t
+    to see the generated httpd.conf file (at the bottom of real.t) and check
+    out what requests it's making of the server (at the top of real.t).
 
 THE LOGIN SCRIPT
     You will need to create a login script (called login.pl above) that
@@ -216,7 +190,20 @@ THE LOGIN SCRIPT
 
     3.  You must define a form field called 'destination' that tells AuthCookie
         where to redirect the request after successfully logging in.
-        Typically this value is obtained from `$r->prev->uri'.
+        Typically this value is obtained from `$r->prev->uri'. See the
+        login.pl script in t/eg/.
+
+THE LOGOUT SCRIPT
+    If you want to let users log themselves out (something that can't be
+    done using Basic Auth), you need to create a logout script. For an
+    example, see t/eg/logout.pl. Logout scripts may want to take advantage
+    of AuthCookie's `logout()' method, which will set the proper cookie
+    headers in order to clear the user's cookie.
+
+    Note that if you don't necessarily trust your users, you can't count on
+    cookie deletion for logging out. You'll have to expire some server-side
+    login information too. AuthCookie doesn't do this for you, you have to
+    handle it yourself.
 
 ABOUT SESSION KEYS
     Unlike the sample AuthCookieHandler, you have you verify the user's
@@ -232,14 +219,11 @@ ABOUT SESSION KEYS
     later, see the ToDo section below for some other ideas.
 
 KNOWN LIMITATIONS
-    The login form uses the GET method to send the user's credentials, so
-    they're visible on the query string.
-
     If the first unauthenticated request is a POST, it will be changed to a
     GET after the user fills out the login forms, and POSTed data will be
     lost.
 
-  ToDo
+  TO DO
 
     *   There ought to be a way to solve the GET/POST problems in the
         LIMITATIONS section. They both involve being able to change a
@@ -247,6 +231,11 @@ KNOWN LIMITATIONS
         involves being able to re-insert the POSTed content into the request
         stream after the user authenticates. If you knows of a way, please
         drop me a note.
+
+        It might be nice if the logout method could accept some parameters
+        that could make it easy to redirect the user to another URI, or
+        whatever. I'd have to think about the options needed before I
+        implement anything, though.
 
 AUTHOR
     Ken Williams, ken@forum.swarthmore.edu

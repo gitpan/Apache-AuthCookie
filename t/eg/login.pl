@@ -1,10 +1,10 @@
+#!/usr/bin/perl
+
 use strict;
 my $r = Apache->request;
 
 $r->status(200);
 my $uri = $r->prev->uri;
-my $a_type = $r->prev->auth_type;
-my $a_name = $r->prev->auth_name;
 
 my $form = <<HERE;
 <HTML>
@@ -12,7 +12,7 @@ my $form = <<HERE;
 <TITLE>Enter Login and Password</TITLE>
 </HEAD>
 <BODY onLoad="document.forms[0].credential_0.focus();">
-<FORM METHOD="GET" ACTION="$uri">
+<FORM METHOD="POST" ACTION="LOGIN">
 <TABLE WIDTH=60% ALIGN=CENTER VALIGN=CENTER>
 <TR><TD ALIGN=CENTER>
 <H1>This is a secure document</H1>
@@ -21,8 +21,8 @@ my $form = <<HERE;
 <P>Please enter your login and password to authenticate.</P>
 </TD>
 <TR><TD>
-<INPUT TYPE="hidden" NAME="AuthType" VALUE="$a_type">
-<INPUT TYPE="hidden" NAME="AuthName" VALUE="$a_name">
+<INPUT TYPE=hidden NAME=destination VALUE="$uri">
+
 </TD></TR>
 <TR><TD>
 <TABLE ALIGN=CENTER>
