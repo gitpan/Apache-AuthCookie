@@ -4,7 +4,7 @@ use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);
 use Apache::Constants qw(:common M_GET M_POST AUTH_REQUIRED REDIRECT);
 use vars qw($VERSION);
 
-$VERSION = substr(q$Revision: 0.5 $, 10);
+$VERSION = substr(q$Revision: 1.3 $, 10);
  
 sub authen ($$) {
     my $that = shift;
@@ -16,7 +16,8 @@ sub authen ($$) {
     my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
     $r->log_error("that " . $that) if ($debug >= 3);
-    return OK unless $r->is_initial_req; #only the first internal request
+    #only the first internal request
+    return OK unless $r->is_initial_req;
 
     ($auth_type) = ($that =~ /^([^:]+)/);
     $r->log_error("auth_type " . $auth_type) if ($debug >= 2);
