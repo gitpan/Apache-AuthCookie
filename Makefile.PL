@@ -46,3 +46,9 @@ WriteMakefile
    'dist' => { COMPRESS=>"gzip", SUFFIX=>"gz" },
    'clean' => {FILES => "t/httpd.loc"},
   );
+
+package MY;
+#sub tardist {
+#  my $inherited = shift->SUPER::dist(@_);
+#  "$inherited\tcvs log AuthCookie.pm | \$(PERL) changes.pl > Changes\n";
+#}
