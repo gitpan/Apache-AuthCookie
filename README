@@ -8,10 +8,13 @@ SYNOPSIS
      PerlModule Sample::AuthCookieHandler
      PerlSetVar WhatEverPath /
      PerlSetVar WhatEverLoginScript /login.pl
+     
+     # The following line is optional
+     PerlSetVar WhatEverDomain .yourdomain.com
 
      # These documents require user to be logged in.
      <Location /protected>
-      AuthType Sample
+      AuthType Sample::AuthCookieHandler
       AuthName WhatEver
       PerlAuthenHandler Sample::AuthCookieHandler->authenticate
       PerlAuthzHandler Sample::AuthCookieHandler->authorize
@@ -20,14 +23,14 @@ SYNOPSIS
 
      # These documents don't require logging in, but allow it.
      <FilesMatch "\.ok$">
-      AuthType Sample
+      AuthType Sample::AuthCookieHandler
       AuthName WhatEver
       PerlFixupHandler Sample::AuthCookieHandler->recognize_user
      </FilesMatch>
 
      # This is the action of the login.pl script above.
      <Files LOGIN>
-      AuthType Sample
+      AuthType Sample::AuthCookieHandler
       AuthName WhatEver
       SetHandler perl-script
       PerlHandler Sample::AuthCookieHandler->login
@@ -46,7 +49,7 @@ DESCRIPTION
     user.
 
     All you have to do is write a custom module that inherits from
-    AuthCookie. Your module implements two functions:
+    AuthCookie. Your module is a class which implements two methods:
 
     `authen_cred()'
         Verify the user-supplied credentials and return a session key. The
@@ -62,7 +65,7 @@ DESCRIPTION
         of who's logged in.
 
     By using AuthCookie versus Apache's built-in AuthBasic you can design
-    your own authentication system. There are at least three main benefits.
+    your own authentication system. There are several benefits.
 
     1.  The client doesn't *have* to pass the user credentials on every
         subsequent access. If you're using passwords, this means that the
@@ -78,6 +81,14 @@ DESCRIPTION
     3.  AuthBasic dialog boxes are ugly. You can design your own HTML login
         forms when you use AuthCookie.
 
+    4.  You can specify the domain of a cookie using PerlSetVar commands. For
+        instance, if your AuthName is `WhatEver', you can put the command
+
+         PerlSetVar WhatEverDomain .yourhost.com
+
+        into your server setup file and your access cookies will span all
+        hosts ending in `.yourhost.com'.
+
     This is the flow of the authentication handler, less the details of the
     redirects. Two REDIRECT's are used to keep the client from displaying
     the user's credentials in the Location field. They don't really change
@@ -87,7 +98,7 @@ DESCRIPTION
      (-----------------------)     +---------------------------------+
      ( Request a protected   )     | AuthCookie sets custom error    |
      ( page, but user hasn't )---->| document and returns            |
-     ( authenticated (no     )     | AUTH_REQUIRED. Apache abandons  |      
+     ( authenticated (no     )     | FORBIDDEN. Apache abandons      |      
      ( session key cookie)   )     | current request and creates sub |      
      (-----------------------)     | request for the error document. |<-+
                                    | Error document is a script that |  |
@@ -148,6 +159,94 @@ DESCRIPTION
         create must be able to determine if this session_key is valid and
         map it back to the originally authenticated user ID.
 
+METHODS
+    `Apache::AuthCookie' has several methods you should know about. Here is
+    the documentation for each. =)
+
+    * authenticate()
+        This method is one you'll use in a server config file (httpd.conf,
+        .htaccess, ...) as a PerlAuthenHandler. If the user provided a
+        session key in a cookie, the `authen_ses_key()' method will get
+        called to check whether the key is valid. If not, or if there is no
+        key provided, we redirect to the login form.
+
+    * authorize()
+        This will step through the `require' directives you've given for
+        protected documents and make sure the user passes muster. The
+        `require valid-user' and `require user joey-jojo' directives are
+        handled for you. You can implement custom directives, such as
+        `require species hamster', by defining a method called `hamster()'
+        in your subclass, which will then be called. The method will be
+        called as `$r->hamster($r, $args)', where `$args' is everything on
+        your `require' line after the word `hamster'. The method should
+        return OK on success and FORBIDDEN on failure.
+
+        Currently users must satisfy ALL of the `require' directives. I have
+        heard that other Apache modules let the user satisfy ANY of the
+        `require' directives. I don't know which is correct, I haven't found
+        any Apache docs on the matter. If you need one behavior or the
+        other, be careful. I may change it if I discover that ANY is
+        correct.
+
+    * authen_cred()
+        You must define this method yourself in your subclass of
+        `Apache::AuthCookie'. Its job is to create the session key that will
+        be preserved in the user's cookie. The arguments passed to it are:
+
+         sub authen_cred ($$\@) {
+           my $self = shift;  # Package name (same as AuthName directive)
+           my $r    = shift;  # Apache request object
+           my @cred = @_;     # Credentials from login form
+
+           ...blah blah blah, create a session key...
+           return $session_key;
+         }
+
+        The only limitation on the session key is that you should be able to
+        look at it later and determine the user's username. You are
+        responsible for implementing your own session key format. A typical
+        format is to make a string that contains the username, an expiration
+        time, whatever else you need, and an MD5 hash of all that data
+        together with a secret key. The hash will ensure that the user
+        doesn't tamper with the session key. More info in the Eagle book.
+
+    * authen_ses_key()
+        You must define this method yourself in your subclass of
+        Apache::AuthCookie. Its job is to look at a session key and
+        determine whether it is valid. If so, it returns the username of the
+        authenticated user.
+
+         sub authen_ses_key ($$$) {
+           my ($self, $r, $session_key) = @_;
+           ...blah blah blah, check whether $session_key is valid...
+           return $ok ? $username : undef;
+         }
+
+    * login()
+        This method handles the submission of the login form. It will call
+        the `authen_cred()' method, passing it `$r' and all the submitted
+        data with names like `"credential_#"', where # is a number. These
+        will be passed in a simple array, so the prototype is `$self-
+        >authen_cred($r, @credentials)'. After calling `authen_cred()', we
+        set the user's cookie and redirect to the URL contained in the
+        `"destination"' submitted form field.
+
+    * logout()
+        This is simply a convenience method that unsets the session key for
+        you. You can call it in your logout scripts. Usually this looks like
+        `$r->auth_type->logout($r);'.
+
+    * recognize_user()
+        If the user has provided a valid session key but the document isn't
+        protected, this method will set `$r->connection->user' anyway. Use
+        it as a PerlFixupHandler, unless you have a better idea.
+
+    * key()
+        This method will return the current session key, if any. This can be
+        handy inside a method that implements a `require' directive check
+        (like the `species' method discussed above) if you put any extra
+        information like clearances or whatever into the session key.
+
 UPGRADING FROM VERSION 1.4
     There are a few interface changes that you need to be aware of when
     migrating from version 1.x to 2.x. First, the authen() and authz()
@@ -198,7 +297,8 @@ THE LOGOUT SCRIPT
     done using Basic Auth), you need to create a logout script. For an
     example, see t/eg/logout.pl. Logout scripts may want to take advantage
     of AuthCookie's `logout()' method, which will set the proper cookie
-    headers in order to clear the user's cookie.
+    headers in order to clear the user's cookie. This usually looks like
+    `$r->auth_type->logout($r);'.
 
     Note that if you don't necessarily trust your users, you can't count on
     cookie deletion for logging out. You'll have to expire some server-side
@@ -225,12 +325,9 @@ KNOWN LIMITATIONS
 
   TO DO
 
-    *   There ought to be a way to solve the GET/POST problems in the
-        LIMITATIONS section. They both involve being able to change a
-        request back & forth between GET & POST. The second problem also
-        involves being able to re-insert the POSTed content into the request
-        stream after the user authenticates. If you knows of a way, please
-        drop me a note.
+    *   There ought to be a way to solve the POST problem in the LIMITATIONS
+        section. It involves being able to re-insert the POSTed content into
+        the request stream after the user authenticates.
 
         It might be nice if the logout method could accept some parameters
         that could make it easy to redirect the user to another URI, or

@@ -1,3 +1,24 @@
+Version: 2.007  Date: 2000/04/15 15:27:02
+   If the browser sends a cookie but it's not one related to our
+   authentication, we formerly sent a blank cookie to the authentication
+   methods.  Now we act as if no cookie was sent.
+   [errorasparks@cpd.harris.com (Alan Sparks)]
+   
+   Fixed a server error that occurred when a certain user was required,
+   but a different valid user was logged in.
+   [efujii@miis.edu (Eduardo Fujii)]
+   
+   Added a couple more debug statements that can help figure out what's
+   happening when your auth isn't working.
+   
+   Improved some of the docs.
+   
+   Added some tricks to Makefile.PL to make my life easier.
+   
+   Changed the action of the example login forms from LOGIN to /LOGIN.
+   [michael@bizsystems.com (Michael)]
+
+
 Version: 2.006  Date: 2000/03/26 18:28:32
    Added the key() method, which will return the user's current session
    key, if any.  This can be handy inside a method that implements a
