@@ -9,8 +9,8 @@ use Apache::AuthCookie::Util;
 use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 2.32 2002/06/21 04:13:19 mschout Exp $
-$VERSION = '3.02';
+# $Id: AuthCookie.pm,v 2.38 2002/09/24 03:18:59 mschout Exp $
+$VERSION = '3.03';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -46,6 +46,7 @@ sub _convert_to_get {
 
     my @pairs =();
     while (my ($name, $value) = each %$args) {
+      $value = '' unless defined $value;
       push @pairs, escape_uri($name) . '=' . escape_uri($value);
     }
     $r->args(join '&', @pairs) if scalar(@pairs) > 0;
@@ -87,7 +88,14 @@ sub login ($$) {
     return $auth_type->login_form;
   }
 
-  $r->log_error("ses_key " . $ses_key) if ($debug >= 2);
+  if ($debug >= 2) {
+    if (defined $ses_key) {
+      $r->log_error("ses_key $ses_key");
+    }
+    else {
+      $r->log_error("ses_key undefined");
+    }
+  }
 
   $self->send_cookie($ses_key);
 
@@ -129,7 +137,7 @@ sub logout($$) {
 
 sub authenticate ($$) {
   my ($auth_type, $r) = @_;
-  my ($authen_script, $auth_user);
+  my $auth_user;
   my $debug = $r->dir_config("AuthCookieDebug") || 0;
   
   $r->log_error("auth_type " . $auth_type) if ($debug >= 3);
@@ -197,7 +205,6 @@ sub authenticate ($$) {
   # document.  Send them the authen form.
   return $auth_type->login_form;
 }
-  
 
 sub login_form {  
   my $r = Apache->request or die "no request";
@@ -307,7 +314,13 @@ sub send_cookie {
   my $cookie = $self->cookie_string( request => $r,
                                      key     => "$auth_type\_$auth_name",
                                      value   => $ses_key );
-  $r->err_header_out("Set-Cookie" => $cookie);
+
+  # add P3P header if user has configured it.    
+  if (my $p3p = $r->dir_config("${auth_name}P3P")) {
+    $r->err_header_out(P3P => $p3p);
+  }
+                                   
+  $r->err_headers_out->add("Set-Cookie" => $cookie);
 }
 
 
@@ -328,6 +341,8 @@ sub cookie_string {
   # its okay if value is undef here.
 
   my $r = $p{request};
+
+  $p{value} = '' unless defined $p{value};
 
   my $string = sprintf '%s=%s', @p{'key','value'};
 
@@ -405,6 +420,11 @@ MethodHandlers, Authen, and Authz compiled in.
 
  # Use this to make your cookies persistent (+2 hours here)
  PerlSetVar WhatEverExpires +2h
+
+ # Use to make AuthCookie send a P3P header with the cookie
+ # see http://www.w3.org/P3P/ for details about what the value 
+ # of this should be
+ PerlSetVar WhatEverP3P "CP=\"...\""
 
  # These documents require user to be logged in.
  <Location /protected>
@@ -548,7 +568,7 @@ client.
   | Set-Cookie header with this|  u |u     /     \   | invalid cookie|
   | session key. Client then   |  r |e    /       \  +---------------+
   | returns session key with   |  n |    /  pass   \               ^    
-  | sucsesive requests         |    |   /  session  \              |    
+  | successive requests        |    |   /  session  \              |
   +----------------------------+    |  /   key to    \    return   |
                |                    +-| authen_ses_key|------------+
                V                       \             /     False
@@ -675,7 +695,7 @@ again').
   example 'custom_errors'
 
   sub custom_errors {
-    my ($r,$msg,$CODE) = @_;
+    my ($self,$r,$CODE,$msg) = @_;
     # return custom message else use the server's standard message
     $r->custom_response($CODE, $msg) if $msg;
     return($CODE);
@@ -883,7 +903,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 2.32 2002/06/21 04:13:19 mschout Exp $
+$Id: AuthCookie.pm,v 2.38 2002/09/24 03:18:59 mschout Exp $
 
 =head1 AUTHOR
 
