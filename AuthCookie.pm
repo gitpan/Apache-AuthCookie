@@ -4,14 +4,13 @@ use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);
 use Apache::Constants qw(:common M_GET M_POST AUTH_REQUIRED REDIRECT);
 use vars qw($VERSION);
 
-$VERSION = substr(q$Revision: 1.3 $, 10);
+$VERSION = substr(q$Revision: 1.3_02 $, 10);
  
 sub authen ($$) {
     my $that = shift;
     my $r = shift;
-    my($ses_key_str, $cookie_path, $authen_script);
-    my($auth_user, $auth_name, $auth_type);
-    my @ses_key;
+    my($ses_key_cookie, $cookie_path, $authen_script);
+    my($auth_user, $auth_name, $auth_type, $ses_key);
 
     my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
@@ -53,19 +52,15 @@ sub authen ($$) {
 
     # Get the Cookie header. If there is a session key for this realm, strip
     # off everything but the value of the cookie.
-    ($ses_key_str) = ($r->header_in("Cookie") =~ 
+    ($ses_key_cookie) = ($r->header_in("Cookie") =~ 
 	/${auth_type}_${auth_name}=([^;]+)/);
+    $ses_key = $ses_key_cookie;
 
-    $r->log_error("ses_key_str " . $ses_key_str) if ($debug >= 1);
+    $r->log_error("ses_key_cookie " . $ses_key_cookie) if ($debug >= 1);
     $r->log_error("cookie_path " . $cookie_path) if ($debug >= 2);
     $r->log_error("uri " . $r->uri) if ($debug >= 2);
 
-    if ($ses_key_str)
-    {
-	# Ok, there is a session key. Split it into the ses_key array
-	@ses_key = split(/:/, $ses_key_str);
-    }
-    elsif ($r->args ne "")
+    if (!defined($ses_key_cookie) && ! $ses_key_cookie && $r->args ne "")
     {
 	# No session key set, but the method is post. We should be
 	# coming back with the users credentials.
@@ -93,10 +88,11 @@ sub authen ($$) {
 	# Exchange the credentials for a session key. If they credentials
 	# fail this should return nothing, which will fall trough to call
 	# the get credentials script again
-	@ses_key = $that->authen_cred($r, @credentials);
-	$r->log_error("ses_key " . join(":", @ses_key)) if ($debug >= 2);
+	$ses_key = $that->authen_cred($r, @credentials);
+	$r->log_error("ses_key " . $ses_key) if ($debug >= 2);
     }
-    elsif ($r->method_number != M_GET)
+    elsif (!defined($ses_key_cookie) && ! $ses_key_cookie &&
+	    $r->method_number != M_GET)
     {
 	# They aren't authenticated, but they are trying a POST or
 	# something, this is not allowed.
@@ -105,19 +101,17 @@ sub authen ($$) {
 	return SERVER_ERROR;
     }
 
-    $r->log_error("#ses_key " . $#ses_key) if ($debug >= 3);
-    if ($#ses_key >= 0) {
+    if (defined($ses_key) && $ses_key) {
 	# We have a session key. So, lets see if it's valid. If it is
 	# we return with an OK value. If not then we fall through to
 	# call the get credentials script.
-	if ($auth_user = $that->authen_ses_key($r, @ses_key)) {
-	    if (!($ses_key_str)) {
+	if ($auth_user = $that->authen_ses_key($r, $ses_key)) {
+	    if (!($ses_key_cookie)) {
 		# They session key is valid, but it's not yet set on
 		# the client. So, send the Set-Cookie header.
 		$r->err_header_out("Set-Cookie" => $auth_type . "_" .
-		    $auth_name .  "=" .  join(":", @ses_key) .
-		    "; path=" .  $cookie_path);
-		$r->log_error("set_cookie " . $r->header_out("Set-Cookie"))
+		    $auth_name .  "=" . $ses_key . "; path=" .  $cookie_path);
+		$r->log_error("set_cookie " . $r->err_header_out("Set-Cookie"))
 		    if ($debug >= 2);
 
 		# Redirect the client to the same page, but without the
@@ -126,7 +120,7 @@ sub authen ($$) {
 		# from displaying the credentials in the "Location".
 		$r->no_cache(1);
                 $r->err_header_out("Pragma", "no-cache");
-                $r->err_header_out("Location" => $r->uri);
+                $r->header_out("Location" => $r->uri);
                 return REDIRECT;
 	    }
 	    # Tell the rest of Apache what the authentication method and
@@ -144,11 +138,11 @@ sub authen ($$) {
     # There was a session key set, but it's invalid for some reason. So,
     # remove it from the client now so when the credential data is posted
     # we act just like it's a new session starting.
-    if ($ses_key_str) {
+    if ($ses_key_cookie) {
 	$r->err_header_out("Set-Cookie" => $auth_type . "_" . $auth_name .
 	    "=; path=" .  $cookie_path .
 	    "; expires=Mon, 21-May-1971 00:00:00 GMT");
-	$r->log_error("set_cookie " . $r->header_out("Set-Cookie"))
+	$r->log_error("set_cookie " . $r->err_header_out("Set-Cookie"))
 	    if ($debug >= 2);
     }
 
@@ -161,7 +155,7 @@ sub authen ($$) {
 	# client to reload the page and keeps it
 	# from displaying the credentials in the "Location".
 	$r->err_header_out("Pragma", "no-cache");
-	$r->err_header_out("Location" => $r->uri);
+	$r->header_out("Location" => $r->uri);
 	return REDIRECT;
     } else {
 	# There should also be a PerlSetVar directive that give us the name
@@ -250,22 +244,27 @@ C<use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);>
 
 =for html
 <PRE>
+=end html
+
  # mod_perl startup script
 
  use Sample::AuthCookieHandler;
 
  # access.conf or .htaccess
 
- <Location /protected>
+ <Location /unprotected/protected>
     PerlAuthenHandler Sample::AuthCookieHandler->authen
     PerlAuthzHandler Sample::AuthCookieHandler->authz
     AuthType Sample
     AuthName WhatEver
-    PerlSetVar WhatEverPath /protected
-    PerlSetVar WhatEverLoginScript /not-protected/login.pl
+    PerlSetVar WhatEverPath /unprotected
+    PerlSetVar WhatEverLoginScript /unprotected/login.pl
+    require valid-user
  </Location>
+
 =for html
 </PRE>
+=end html
 
 =head1 DESCRIPTION
 
@@ -406,7 +405,7 @@ directory.
 
 =item 2.
 
-Install eg/sample into your Apache document root directory.
+Install eg/unprotected into your Apache document root directory.
 
 =item 3.
 
@@ -426,7 +425,7 @@ Restart Apache so mod_perl picks up C<Sample::AuthCookieHandler>.
 
 =item 1.
 
-Try to access /sample/protected/get_me.html. You should instead get
+Try to access /unprotected/protected/get_me.html. You should instead get
 a form requesting a login and password. The sample will validate two
 users. The first is login => programmer and password => Hero and the
 second is login => some-user with no/any password. You might want to
@@ -435,7 +434,7 @@ can see what AuthCookie is generating.
 
 =item 2.
 
-As distributed, the .htaccess file in F<eg/sample/protected> will allow
+As distributed, the .htaccess file in F<eg/unprotected/protected> will allow
 either of these user to access the document. However if you change the
 line C<require valid-user> to C<require dwarf> in .htaccess only the
 user "programmer" will have access. Look at the authorization function
@@ -477,7 +476,7 @@ the user authenticates.  If you knows of a way, please drop me a note.
 Create a session key store that uses shared memory.  If anyone wants to
 get together and help with this that would be cool.  Storing and
 retrieving them should be easy, but the harder part is cleaning out
-"old" keys and dealing with server restarts without loosing all the
+"old" keys and dealing with server restarts without losing all the
 keys.
 
 =back

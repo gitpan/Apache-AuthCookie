@@ -1,4 +1,25 @@
 Revision history for Perl extension Apache::AuthCookie.
 
-0.5  Mon Feb 16 1998
-	- first public release on CPAN.
+1.3_02
+	- login.pl now uses $r->prev to get authtype and authname, so it
+	  doesn't have to be in the same hierarchy as the proctected docs.
+	  Thanks to Liam Kirsher <liam@numenet.com> for spotting this.
+	- Steve Shreeve <shreeve@meded.med.uci.edu> tracked down a segv
+	  from $r->err_header_out("Location"... I never could reproduce
+	  this, but he said this $r->header_out("Location"... worked.
+	- Fixed typo pointed out by Nate Wilken <wilken@mr_x.inre.asu.edu>
+	- Changed directory eg/sample to eg/unprotected for compatibility
+	  with windows pointed out by Nate Wilken <wilken@mr_x.inre.asu.edu>
+	- Make synopsis access control params match the example. Pointed
+	  out by tad@webcollective.com.
+
+1.3_01
+	- Fix error where the cookie wasn't printed when debugging was
+	  turned on.
+	- Consistantly treat the session key as a string. This meant a
+	  change to the authen_* function prototypes, you may need to
+	  change ones you've already written.
+
+1.3
+	- First public release on CPAN, removed from Apache contrib.
+

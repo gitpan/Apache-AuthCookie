@@ -3,8 +3,8 @@ my $r = Apache->request;
 
 $r->status(200);
 my $uri = $r->prev->uri;
-my $a_type = $r->auth_type;
-my $a_name = $r->auth_name;
+my $a_type = $r->prev->auth_type;
+my $a_name = $r->prev->auth_name;
 
 my $form = <<HERE;
 <HTML>

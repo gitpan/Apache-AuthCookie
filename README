@@ -4,20 +4,21 @@ NAME
 SYNOPSIS
     `use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);'
 
+     # mod_perl startup script
+
      use Sample::AuthCookieHandler;
 
      # access.conf or .htaccess
 
-     <Location /protected>
+     <Location /unprotected/protected>
         PerlAuthenHandler Sample::AuthCookieHandler->authen
         PerlAuthzHandler Sample::AuthCookieHandler->authz
         AuthType Sample
         AuthName WhatEver
-        PerlSetVar WhatEverPath /protected
-        PerlSetVar WhatEverLoginScript /not-protected/login.pl
+        PerlSetVar WhatEverPath /unprotected
+        PerlSetVar WhatEverLoginScript /unprotected/login.pl
+        require valid-user
      </Location>
-    =for html
-    </PRE>
 
 DESCRIPTION
     Apache::AuthCookie allows you to intercept a users first unauthenticated
@@ -129,7 +130,7 @@ EXAMPLE
     1.  Install eg/Sample into the site_perl directory in your perl5 library
         directory.
 
-    2.  Install eg/sample into your Apache document root directory.
+    2.  Install eg/unprotected into your Apache document root directory.
 
     3.  Add `use Sample::AuthCookieHandler;' to your mod_perl startup script or
         `Sample::AuthCookieHandler' to your PerlModule configuration
@@ -139,19 +140,19 @@ EXAMPLE
 
   Tryout the sample
 
-    1.  Try to access /sample/protected/get_me.html. You should instead get a
-        form requesting a login and password. The sample will validate two
+    1.  Try to access /unprotected/protected/get_me.html. You should instead get
+        a form requesting a login and password. The sample will validate two
         users. The first is login => programmer and password => Hero and the
         second is login => some-user with no/any password. You might want to
         set your browser to show you cookies before accepting them. Then you
         can see what AuthCookie is generating.
 
-    2.  As distributed, the .htaccess file in eg/sample/protected will allow
-        either of these user to access the document. However if you change
-        the line `require valid-user' to `require dwarf' in .htaccess only
-        the user "programmer" will have access. Look at the authorization
-        function `dwarf()' in eg/Sample/AuthCookieHandler.pm to see how this
-        works.
+    2.  As distributed, the .htaccess file in eg/unprotected/protected will
+        allow either of these user to access the document. However if you
+        change the line `require valid-user' to `require dwarf' in .htaccess
+        only the user "programmer" will have access. Look at the
+        authorization function `dwarf()' in eg/Sample/AuthCookieHandler.pm
+        to see how this works.
 
   Using a Session Key
 
@@ -184,7 +185,7 @@ KNOWN LIMITATIONS
             to get together and help with this that would be cool. Storing
             and retrieving them should be easy, but the harder part is
             cleaning out "old" keys and dealing with server restarts without
-            loosing all the keys.
+            losing all the keys.
 
 AUTHOR
         Eric Bartley, bartley@purdue.edu
