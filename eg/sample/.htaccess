@@ -1,0 +1,6 @@
+PerlAuthenHandler Sample::AuthCookieHandler->authen
+PerlAuthzHandler Sample::AuthCookieHandler->authz
+AuthType Sample
+AuthName WhatEver
+PerlSetVar WhatEverPath /sample
+PerlSetVar WhatEverLoginScript /sample/login.pl

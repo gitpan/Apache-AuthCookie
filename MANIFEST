@@ -1,0 +1,14 @@
+AuthCookie.pm
+Changes
+MANIFEST
+README
+Makefile.PL
+test.pl
+eg/Skeleton/AuthCookieHandler.pm
+eg/Sample/AuthCookieHandler.pm
+eg/sample/.htaccess
+eg/sample/index.html
+eg/sample/login.pl
+eg/sample/logout.pl
+eg/sample/protected/.htaccess
+eg/sample/protected/get_me.html
