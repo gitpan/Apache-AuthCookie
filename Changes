@@ -1,3 +1,22 @@
+Version: 2.006  Date: 2000/03/26 18:28:32
+   Added the key() method, which will return the user's current session
+   key, if any.  This can be handy inside a method that implements a
+   C<require> directive check (like the C<species> method discussed
+   above) if you put any extra information like clearances or whatever
+   into the session key.
+   
+   Added method-by-method documentation for each method in AuthCookie.
+
+
+Version: 2.005  Date: 2000/03/24 15:20:30
+   Removed the deprecated methods ->authen and ->authz.  If you have
+   configurations that use these methods, you must change to the newer
+   ->authenticate and ->authorize methods.
+   
+   Changed a couple of 'Sample's in the documentation to
+   'Sample::AuthCookieHandler'.  [asparks@cpd.harris.com (Alan Sparks)]
+
+
 Version: 2.004  Date: 2000/03/15 20:53:20
    Added documentation about the ability to set cookie domains.  That
    ability actually appeared in 2.002, but I forgot to document it or add
