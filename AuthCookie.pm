@@ -9,8 +9,8 @@ use Apache::AuthCookie::Util;
 use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
-$VERSION = '3.01';
+# $Id: AuthCookie.pm,v 2.32 2002/06/21 04:13:19 mschout Exp $
+$VERSION = '3.02';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -36,7 +36,7 @@ sub recognize_user ($$) {
 
 # convert current request to GET
 sub _convert_to_get {
-    my ($self, $r) = @_;
+    my ($self, $r, $args) = @_;
 
     return unless $r->method eq 'POST';
 
@@ -44,9 +44,8 @@ sub _convert_to_get {
 
     $r->log_error("Converting POST -> GET") if $debug >= 2;
 
-    my %args = $r->content;
     my @pairs =();
-    while (my ($name, $value) = each %args) {
+    while (my ($name, $value) = each %$args) {
       push @pairs, escape_uri($name) . '=' . escape_uri($value);
     }
     $r->args(join '&', @pairs) if scalar(@pairs) > 0;
@@ -63,7 +62,7 @@ sub login ($$) {
   my ($auth_type, $auth_name) = ($r->auth_type, $r->auth_name);
   my %args = $r->method eq 'POST' ? $r->content : $r->args;
 
-  $self->_convert_to_get($r) if $r->method eq 'POST';
+  $self->_convert_to_get($r, \%args) if $r->method eq 'POST';
 
   unless (exists $args{'destination'}) {
     $r->log_error("No key 'destination' found in form data");
@@ -218,10 +217,28 @@ sub login_form {
   return FORBIDDEN;
 }
 
+sub satisfy_is_valid {
+  my ($auth_type, $r, $satisfy) = @_;
+  $satisfy = lc $satisfy;
+
+  if ($satisfy eq 'any' or $satisfy eq 'all') {
+    return 1;
+  } else { 
+    $r->log_reason("PerlSetVar AuthCookieSatisfy $satisfy invalid",$r->uri);
+    return 0;
+  }
+}
+
+sub get_satisfy {
+  my ($auth_type, $r) = @_;
+  return lc $r->dir_config('AuthCookieSatisfy') || 'all';
+}
+
 sub authorize ($$) {
   my ($auth_type, $r) = @_;
   my $debug = $r->dir_config("AuthCookieDebug") || 0;
   
+  $r->log_error('authorize() for '.$r->uri()) if ($debug >= 3);
   return OK unless $r->is_initial_req; #only the first internal request
   
   if ($r->auth_type ne $auth_type) {
@@ -239,15 +256,30 @@ sub authorize ($$) {
     return FORBIDDEN;
   }
   
+  my $satisfy = $auth_type->get_satisfy($r);
+  return SERVER_ERROR unless $auth_type->satisfy_is_valid($r,$satisfy);
+  my $satisfy_all = $satisfy eq 'all';
+  
   my ($forbidden);
   foreach my $req (@$reqs_arr) {
     my ($requirement, $args) = split /\s+/, $req->{requirement}, 2;
     $args = '' unless defined $args;
     $r->log_error("requirement := $requirement, $args") if $debug >= 2;
     
-    next if $requirement eq 'valid-user';
+    if ( lc($requirement) eq 'valid-user' ) {
+      if ($satisfy_all) {
+        next;
+      } else {
+        return OK;
+      }
+    }
+
     if($requirement eq 'user') {
-      next if $args =~ m/\b$user\b/;
+      if ($args =~ m/\b$user\b/) {
+        next if $satisfy_all;
+        return OK; # satisfy any
+      }
+     
       $forbidden = 1;
       next;
     }
@@ -255,11 +287,13 @@ sub authorize ($$) {
     # Call a custom method
     my $ret_val = $auth_type->$requirement($r, $args);
     $r->log_error("$auth_type->$requirement returned $ret_val") if $debug >= 3;
-    next if $ret_val == OK;
+    if ($ret_val == OK) {
+      next if $satisfy_all;
+      return OK; # satisfy any
+    }
 
     # Nothing succeeded, deny access to this user.
     $forbidden = 1;
-    last;
   }
 
   return $forbidden ? FORBIDDEN : OK;
@@ -304,11 +338,7 @@ sub cookie_string {
     $string .= "; expires=$expires";
   }
 
-  if (my $path = $r->dir_config("${auth_name}Path")) {
-    $string .= "; path=$path";
-  } else {
-    $string .= '; path=/';
-  }
+  $string .= '; path=' . ( $self->get_cookie_path($r) || '/' );
   #$r->log_error("Attribute ${auth_name}Path not set") unless $path;
 
   if (my $domain = $r->dir_config("${auth_name}Domain")) {
@@ -329,6 +359,15 @@ sub key {
   return ($allcook =~ /(?:^|\s)${type}_$name=([^;]*)/)[0];
 }
 
+sub get_cookie_path {
+    my $self = shift;
+    my $r    = shift || Apache->request;
+
+    my $auth_name = $r->auth_name;
+
+    return $r->dir_config("${auth_name}Path");
+}
+
 1;
 
 __END__
@@ -346,6 +385,13 @@ MethodHandlers, Authen, and Authz compiled in.
  PerlModule Sample::AuthCookieHandler
  PerlSetVar WhatEverPath /
  PerlSetVar WhatEverLoginScript /login.pl
+
+ # use to alter how "require" directives are matched. Can be "Any" or "All".
+ # If its "Any", then you must only match Any of the "require" directives. If
+ # its "All", then you must match All of the require directives. 
+ #
+ # Default: Any
+ PerlSetVar WhatEverSatisfy Any
  
  # The following line is optional - it allows you to set the domain
  # scope of your cookie.  Default is the current domain.
@@ -837,7 +883,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
+$Id: AuthCookie.pm,v 2.32 2002/06/21 04:13:19 mschout Exp $
 
 =head1 AUTHOR
 

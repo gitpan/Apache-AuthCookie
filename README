@@ -9,6 +9,13 @@ SYNOPSIS
      PerlModule Sample::AuthCookieHandler
      PerlSetVar WhatEverPath /
      PerlSetVar WhatEverLoginScript /login.pl
+
+     # use to alter how "require" directives are matched. Can be "Any" or "All".
+     # If its "Any", then you must only match Any of the "require" directives. If
+     # its "All", then you must match All of the require directives. 
+     #
+     # Default: Any
+     PerlSetVar WhatEverSatisfy Any
  
      # The following line is optional - it allows you to set the domain
      # scope of your cookie.  Default is the current domain.
@@ -422,7 +429,7 @@ KNOWN LIMITATIONS
         though.
 
 CVS REVISION
-    $Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
+    $Id: AuthCookie.pm,v 2.32 2002/06/21 04:13:19 mschout Exp $
 
 AUTHOR
     Michael Schout <mschout@gkg.net>
