@@ -1,0 +1,10 @@
+^blib/
+^MANIFEST\.
+^Makefile$
+^pm_to_blib$
+~$
+ssi\.t$
+CVS/
+error_log
+t/httpd.loc
+README
