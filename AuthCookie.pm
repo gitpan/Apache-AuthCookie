@@ -4,7 +4,7 @@ use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);
 use Apache::Constants qw(:common M_GET M_POST AUTH_REQUIRED REDIRECT);
 use vars qw($VERSION);
 
-$VERSION = substr(q$Revision: 1.3_03 $, 10);
+$VERSION = substr(q$Revision: 1.4 $, 10);
  
 sub authen ($$) {
     my $that = shift;
