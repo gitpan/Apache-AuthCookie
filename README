@@ -298,19 +298,41 @@ EXAMPLE
 
 THE LOGIN SCRIPT
     You will need to create a login script (called login.pl above) that
-    generates an HTML form for the user to fill out. The following fields
-    must be present in the form:
+    generates an HTML form for the user to fill out. You might generate the
+    page using an Apache::Registry script, or an HTML::Mason component, or
+    perhaps even using a static HTML page. It's usually useful to generate
+    it dynamically so that you can define the 'destination' field correctly
+    (see below).
+
+    The following fields must be present in the form:
 
     1.  The ACTION of the form must be /LOGIN (or whatever you defined in your
-        server configuration, as in the SYNOPSIS section).
+        server configuration as handled by the ->login() method - see
+        example in the SYNOPSIS section).
 
     2.  The various user input fields (username, passwords, etc.) must be named
-        'credential_0', 'credential_1', etc. on the form.
+        'credential_0', 'credential_1', etc. on the form. These will get
+        passed to your authen_cred() method.
 
     3.  You must define a form field called 'destination' that tells AuthCookie
         where to redirect the request after successfully logging in.
         Typically this value is obtained from `$r->prev->uri'. See the
         login.pl script in t/eg/.
+
+    In addition, you might want your login page to be able to tell the
+    difference between a user that sent an incorrect auth cookie, and a user
+    that sent no auth cookie at all. These typically correspond,
+    respectively, to users who logged in incorrectly or aren't allowed to
+    access the given page, and users who are trying to log in for the first
+    time. To help you differentiate between the two, AuthCookie will set
+    `$r->subprocess_env('AuthCookieReason')' to either `bad_cookie' or
+    `no_cookie'. You can examine this value in your login form by examining
+    `$r->prev->subprocess_env('AuthCookieReason')' (because it's a sub-
+    request).
+
+    Of course, if you want to give more specific information about why
+    access failed when a cookie is present, your `authen_ses_key()' method
+    can set arbitrary entries in `$r->subprocess_env'.
 
 THE LOGOUT SCRIPT
     If you want to let users log themselves out (something that can't be
