@@ -4,7 +4,7 @@ use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);
 use Apache::Constants qw(:common M_GET M_POST AUTH_REQUIRED REDIRECT);
 use vars qw($VERSION);
 
-$VERSION = substr(q$Revision: 1.3_02 $, 10);
+$VERSION = substr(q$Revision: 1.3_03 $, 10);
  
 sub authen ($$) {
     my $that = shift;
@@ -52,15 +52,16 @@ sub authen ($$) {
 
     # Get the Cookie header. If there is a session key for this realm, strip
     # off everything but the value of the cookie.
-    ($ses_key_cookie) = ($r->header_in("Cookie") =~ 
+    ($ses_key_cookie) = ( ($r->header_in("Cookie") || "") =~ 
 	/${auth_type}_${auth_name}=([^;]+)/);
+    $ses_key_cookie = "" unless defined($ses_key_cookie);
     $ses_key = $ses_key_cookie;
 
     $r->log_error("ses_key_cookie " . $ses_key_cookie) if ($debug >= 1);
     $r->log_error("cookie_path " . $cookie_path) if ($debug >= 2);
     $r->log_error("uri " . $r->uri) if ($debug >= 2);
 
-    if (!defined($ses_key_cookie) && ! $ses_key_cookie && $r->args ne "")
+    if (! $ses_key_cookie && defined($r->args))
     {
 	# No session key set, but the method is post. We should be
 	# coming back with the users credentials.
@@ -91,8 +92,7 @@ sub authen ($$) {
 	$ses_key = $that->authen_cred($r, @credentials);
 	$r->log_error("ses_key " . $ses_key) if ($debug >= 2);
     }
-    elsif (!defined($ses_key_cookie) && ! $ses_key_cookie &&
-	    $r->method_number != M_GET)
+    elsif (! $ses_key_cookie && $r->method_number != M_GET)
     {
 	# They aren't authenticated, but they are trying a POST or
 	# something, this is not allowed.
@@ -101,7 +101,7 @@ sub authen ($$) {
 	return SERVER_ERROR;
     }
 
-    if (defined($ses_key) && $ses_key) {
+    if ($ses_key) {
 	# We have a session key. So, lets see if it's valid. If it is
 	# we return with an OK value. If not then we fall through to
 	# call the get credentials script.
@@ -149,7 +149,7 @@ sub authen ($$) {
     # They aren't authenticated, and they tried to get a protected
     # document. Send them the authen form.
 
-    if ($r->args ne "") {
+    if (defined($r->args)) {
 	# Redirect the client to the same page, but without the
 	# query string in the URL. This forces the
 	# client to reload the page and keeps it
@@ -191,7 +191,7 @@ sub authz ($$) {
 	return DECLINED;
     }
 
-    my $reqs_arr = $r->requires;
+    my $reqs_arr = ($r->requires || "");
     return OK unless $reqs_arr;
 
     my $user = $r->connection->user;
@@ -204,6 +204,7 @@ sub authz ($$) {
     my($reqs, $requirement, $args, $restricted);
     foreach $reqs (@$reqs_arr) {
         ($requirement, $args) = split /\s+/, $reqs->{requirement}, 2;
+	$args = "" unless defined($args);
 	$r->log_error("requirement := $requirement, $args") if ($debug >= 2);
 
 	if ($requirement eq "valid-user") {
