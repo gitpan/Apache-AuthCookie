@@ -434,7 +434,7 @@ KNOWN LIMITATIONS
         though.
 
 CVS REVISION
-    $Id: AuthCookie.pm,v 2.38 2002/09/24 03:18:59 mschout Exp $
+    $Id: AuthCookie.pm,v 2.39 2002/09/25 16:44:31 mschout Exp $
 
 AUTHOR
     Michael Schout <mschout@gkg.net>
