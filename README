@@ -185,8 +185,8 @@ METHODS
         protected documents and make sure the user passes muster. The "require
         valid-user" and "require user joey-jojo" directives are handled for you.
         You can implement custom directives, such as "require species hamster",
-        by defining a method called "hamster()" in your subclass, which will
-        then be called. The method will be called as "$r->hamster($r, $args)",
+        by defining a method called "species()" in your subclass, which will
+        then be called. The method will be called as "$r->species($r, $args)",
         where "$args" is everything on your "require" line after the word
         "hamster". The method should return OK on success and FORBIDDEN on
         failure.
@@ -230,6 +230,40 @@ METHODS
            ...blah blah blah, check whether $session_key is valid...
            return $ok ? $username : undef;
          }
+
+        Optionally, return an array of 2 or more items that will be passed to
+        method custom_errors. It is the responsibility of this method to return
+        the correct response to the main Apache module.
+
+    * custom_errors($r,@_)
+        Note: this interface is experimental.
+
+        This method handles the server response when you wish to access the
+        Apache custom_response method. Any suitable response can be used. this
+        is particularly useful when implementing 'by directory' access control
+        using the user authentication information. i.e.
+
+                /restricted
+                        /one            user is allowed access here
+                        /two            not here
+                        /three          AND here
+
+        The authen_ses_key method would return a normal response when the user
+        attempts to access 'one' or 'three' but return (NOT_FOUND, 'File not
+        found') if an attempt was made to access subdirectory 'two'. Or, in the
+        case of expired credentials, (AUTH_REQUIRED,'Your session has timed out,
+        you must login again').
+
+          example 'custom_errors'
+
+          sub custom_errors {
+            my ($r,$msg,$CODE) = @_;
+            # return custom message else use the server's standard message
+            $r->custom_response($CODE, $msg) if $msg;
+            return($CODE);
+          }
+          
+          where CODE is a valid code from Apache::Constants
 
     * login()
         This method handles the submission of the login form. It will call the
@@ -319,14 +353,27 @@ THE LOGIN SCRIPT
         this value is obtained from "$r->prev->uri". See the login.pl script in
         t/eg/.
 
-    In addition, you might want your login page to be able to tell the
-    difference between a user that sent an incorrect auth cookie, and a user
-    that sent no auth cookie at all. These typically correspond, respectively,
-    to users who logged in incorrectly or aren't allowed to access the given
-    page, and users who are trying to log in for the first time. To help you
-    differentiate between the two, AuthCookie will set
-    "$r->subprocess_env('AuthCookieReason')" to either "bad_cookie" or
-    "no_cookie". You can examine this value in your login form by examining
+    In addition, you might want your login page to be able to tell why the user
+    is being asked to log in. In other words, if the user sent bad credentials,
+    then it might be useful to display an error message saying that the given
+    username or password are invalid. Also, it might be useful to determine the
+    difference between a user that sent an invalid auth cookie, and a user that
+    sent no auth cookie at all. To cope with these situations, AuthCookie will
+    set "$r->subprocess_env('AuthCookieReason')" to one of the following values.
+
+    *no_cookie*
+        The user presented no cookie at all. Typically this means the user is
+        trying to log in for the first time.
+
+    *bad_cookie*
+        The cookie the user presented is invalid. Typically this means that the
+        user is not allowed access to the given page.
+
+    *bad_credentials*
+        The user tried to log in, but the credentials that were passed are
+        invalid.
+
+    You can examine this value in your login form by examining
     "$r->prev->subprocess_env('AuthCookieReason')" (because it's a sub-request).
 
     Of course, if you want to give more specific information about why access
@@ -375,7 +422,7 @@ KNOWN LIMITATIONS
         though.
 
 CVS REVISION
-    $Id: AuthCookie.pm,v 2.16 2001/06/01 15:50:27 mschout Exp $
+    $Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
 
 AUTHOR
     Michael Schout <mschout@gkg.net>
@@ -383,6 +430,12 @@ AUTHOR
     Originally written by Eric Bartley <bartley@purdue.edu>
 
     versions 2.x were written by Ken Williams <ken@forum.swarthmore.edu>
+
+COPYRIGHT
+    Copyright (c) 2000 Ken Williams. All rights reserved.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
 
 SEE ALSO
     the perl(1) manpage, the mod_perl(1) manpage, the Apache(1) manpage.

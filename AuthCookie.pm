@@ -3,13 +3,14 @@ package Apache::AuthCookie;
 use strict;
 
 use Carp;
-use CGI::Util ();
 use mod_perl qw(1.07 StackedHandlers MethodHandlers Authen Authz);
-use Apache::Constants qw(:common M_GET M_POST FORBIDDEN REDIRECT);
+use Apache::Constants qw(:common M_GET FORBIDDEN REDIRECT);
+use Apache::AuthCookie::Util;
+use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 2.16 2001/06/01 15:50:27 mschout Exp $
-$VERSION = '3.00';
+# $Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
+$VERSION = '3.01';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -22,13 +23,38 @@ sub recognize_user ($$) {
   $r->log_error("cookie ${auth_type}_${auth_name} is $cookie") if $debug >= 2;
   return unless $cookie;
 
-  if (my ($user) = $auth_type->authen_ses_key($r, $cookie)) {
+  my ($user,@args) = $auth_type->authen_ses_key($r, $cookie);
+  if ($user and scalar @args == 0) {
     $r->log_error("user is $user") if $debug >= 2;
     $r->connection->user($user);
+  } elsif (scalar @args > 0 and $auth_type->can('custom_errors')) {
+    return $auth_type->custom_errors($r, $user, @args);
   }
+
   return OK;
 }
 
+# convert current request to GET
+sub _convert_to_get {
+    my ($self, $r) = @_;
+
+    return unless $r->method eq 'POST';
+
+    my $debug = $r->dir_config("AuthCookieDebug") || 0;
+
+    $r->log_error("Converting POST -> GET") if $debug >= 2;
+
+    my %args = $r->content;
+    my @pairs =();
+    while (my ($name, $value) = each %args) {
+      push @pairs, escape_uri($name) . '=' . escape_uri($value);
+    }
+    $r->args(join '&', @pairs) if scalar(@pairs) > 0;
+
+    $r->method('GET');
+    $r->method_number(M_GET);
+    $r->headers_in->unset('Content-Length');
+}
 
 sub login ($$) {
   my ($self, $r) = @_;
@@ -36,9 +62,13 @@ sub login ($$) {
 
   my ($auth_type, $auth_name) = ($r->auth_type, $r->auth_name);
   my %args = $r->method eq 'POST' ? $r->content : $r->args;
+
+  $self->_convert_to_get($r) if $r->method eq 'POST';
+
   unless (exists $args{'destination'}) {
-    $r->log_error("No key 'destination' found in posted data");
-    return SERVER_ERROR;
+    $r->log_error("No key 'destination' found in form data");
+    $r->subprocess_env('AuthCookieReason', 'no_cookie');
+    return $auth_type->login_form;
   }
   
   # Get the credentials from the data posted by the client
@@ -51,15 +81,17 @@ sub login ($$) {
   
   # Exchange the credentials for a session key.
   my $ses_key = $self->authen_cred($r, @credentials);
+  unless ($ses_key) {
+    $r->log_error("Bad credentials") if $debug >=2;
+    $r->subprocess_env('AuthCookieReason', 'bad_credentials');
+    $r->uri($args{'destination'});
+    return $auth_type->login_form;
+  }
+
   $r->log_error("ses_key " . $ses_key) if ($debug >= 2);
 
   $self->send_cookie($ses_key);
 
-  if ($r->method eq 'POST') {
-    $r->method('GET');
-    $r->method_number(M_GET);
-    $r->headers_in->unset('Content-Length');
-  }
   unless ($r->dir_config("${auth_name}Cache")) {
     $r->no_cache(1);
     $r->err_header_out("Pragma" => "no-cache");
@@ -129,15 +161,20 @@ sub authenticate ($$) {
   $r->log_error("uri " . $r->uri) if ($debug >= 2);
 
   if ($ses_key_cookie) {
-    if ($auth_user = $auth_type->authen_ses_key($r, $ses_key_cookie)) {
+    my ($auth_user, @args) = $auth_type->authen_ses_key($r, $ses_key_cookie);
+
+    if ($auth_user and scalar @args == 0) {
       # We have a valid session key, so we return with an OK value.
       # Tell the rest of Apache what the authentication method and
       # user is.
 
       $r->connection->auth_type($auth_type);
       $r->connection->user($auth_user);
-      $r->log_error("user authenticated as $auth_user")	if $debug >= 1;
+      $r->log_error("user authenticated as $auth_user") if $debug >= 1;
+
       return OK;
+    } elsif (scalar @args > 0 and $auth_type->can('custom_errors')) {
+      return $auth_type->custom_errors($r, $auth_user, @args);
     } else {
       # There was a session key set, but it's invalid for some reason. So,
       # remove it from the client now so when the credential data is posted
@@ -263,12 +300,14 @@ sub cookie_string {
   my $auth_name = $r->auth_name;
   
   if (my $expires = $p{expires} || $r->dir_config("${auth_name}Expires")) {
-    $expires = CGI::Util::expires($expires);
+    $expires = Apache::AuthCookie::Util::expires($expires);
     $string .= "; expires=$expires";
   }
 
   if (my $path = $r->dir_config("${auth_name}Path")) {
     $string .= "; path=$path";
+  } else {
+    $string .= '; path=/';
   }
   #$r->log_error("Attribute ${auth_name}Path not set") unless $path;
 
@@ -515,9 +554,9 @@ This will step through the C<require> directives you've given for
 protected documents and make sure the user passes muster.  The
 C<require valid-user> and C<require user joey-jojo> directives are
 handled for you.  You can implement custom directives, such as
-C<require species hamster>, by defining a method called C<hamster()>
+C<require species hamster>, by defining a method called C<species()>
 in your subclass, which will then be called.  The method will be
-called as C<$r-E<gt>hamster($r, $args)>, where C<$args> is everything
+called as C<$r-E<gt>species($r, $args)>, where C<$args> is everything
 on your C<require> line after the word C<hamster>.  The method should
 return OK on success and FORBIDDEN on failure.
 
@@ -562,6 +601,41 @@ authenticated user.
    ...blah blah blah, check whether $session_key is valid...
    return $ok ? $username : undef;
  }
+
+Optionally, return an array of 2 or more items that will be passed to method
+custom_errors. It is the responsibility of this method to return the correct
+response to the main Apache module.
+
+=item * custom_errors($r,@_)
+
+Note: this interface is experimental.
+
+This method handles the server response when you wish to access the Apache
+custom_response method. Any suitable response can be used. this is
+particularly useful when implementing 'by directory' access control using
+the user authentication information. i.e.
+
+        /restricted
+                /one            user is allowed access here
+                /two            not here
+                /three          AND here
+
+The authen_ses_key method would return a normal response when the user attempts
+to access 'one' or 'three' but return (NOT_FOUND, 'File not found') if an
+attempt was made to access subdirectory 'two'. Or, in the case of expired
+credentials, (AUTH_REQUIRED,'Your session has timed out, you must login
+again').
+
+  example 'custom_errors'
+
+  sub custom_errors {
+    my ($r,$msg,$CODE) = @_;
+    # return custom message else use the server's standard message
+    $r->custom_response($CODE, $msg) if $msg;
+    return($CODE);
+  }
+          
+  where CODE is a valid code from Apache::Constants
 
 =item * login()
 
@@ -674,15 +748,34 @@ See the login.pl script in t/eg/.
 
 =back
 
-In addition, you might want your login page to be able to tell the
-difference between a user that sent an incorrect auth cookie, and a
-user that sent no auth cookie at all.  These typically correspond,
-respectively, to users who logged in incorrectly or aren't allowed to
-access the given page, and users who are trying to log in for the
-first time.  To help you differentiate between the two, B<AuthCookie>
-will set C<$r-E<gt>subprocess_env('AuthCookieReason')> to either
-C<bad_cookie> or C<no_cookie>.  You can examine this value in your
-login form by examining
+In addition, you might want your login page to be able to tell why
+the user is being asked to log in.  In other words, if the user sent
+bad credentials, then it might be useful to display an error message
+saying that the given username or password are invalid.  Also, it
+might be useful to determine the difference between a user that sent
+an invalid auth cookie, and a user that sent no auth cookie at all.  To
+cope with these situations, B<AuthCookie> will set
+C<$r-E<gt>subprocess_env('AuthCookieReason')> to one of the following values.
+
+=over 4
+
+=item I<no_cookie>
+
+The user presented no cookie at all.  Typically this means the user is
+trying to log in for the first time.
+
+=item I<bad_cookie>
+
+The cookie the user presented is invalid.  Typically this means that the user
+is not allowed access to the given page.
+
+=item I<bad_credentials>
+
+The user tried to log in, but the credentials that were passed are invalid.
+
+=back
+
+You can examine this value in your login form by examining
 C<$r-E<gt>prev-E<gt>subprocess_env('AuthCookieReason')> (because it's
 a sub-request).
 
@@ -744,7 +837,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 2.16 2001/06/01 15:50:27 mschout Exp $
+$Id: AuthCookie.pm,v 2.27 2002/04/24 22:34:26 mschout Exp $
 
 =head1 AUTHOR
 
@@ -753,6 +846,13 @@ Michael Schout <mschout@gkg.net>
 Originally written by Eric Bartley <bartley@purdue.edu>
 
 versions 2.x were written by Ken Williams <ken@forum.swarthmore.edu>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2000 Ken Williams. All rights reserved.
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =head1 SEE ALSO
 

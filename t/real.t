@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-use Apache::test qw(skip_test have_httpd test);
-skip_test unless have_httpd;
-
 use strict;
 use lib qw(lib t/lib);
+
+use Apache::test qw(skip_test have_httpd test);
+skip_test unless have_httpd;
 
 use vars qw($TEST_NUM);
 
@@ -55,6 +55,13 @@ my %requests = (
    12 => {uri=>'/docs/protected/get_me.html',
 	  method=>'GET',
 	  headers=>{Cookie=>'Sample::AuthCookieHandler_WhatEver=programmer:Heroo'},
+	 },
+
+   # should get the login form back (bad_credentials).
+   # Check that destination is right.
+   13  => {uri=>'/LOGIN',
+	   method=>'POST',
+	   content=>'destination=/protected/get_me.html&credential_0=fail&credential_1=Hero',
 	 },
 
 );
