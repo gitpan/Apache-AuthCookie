@@ -43,12 +43,9 @@ WriteMakefile
   (
    'NAME' => 'Apache::AuthCookie',
    'VERSION_FROM' => 'AuthCookie.pm', # finds $VERSION
-   'dist' => { COMPRESS=>"gzip", SUFFIX=>"gz" },
+   'dist' => { COMPRESS=>"gzip", 
+	       SUFFIX=>"gz", 
+	       PREOP=>'rm -f Changes; cvs log AuthCookie.pm | $(PERL) -MCVS::Parse -e "prettylog" > Changes',
+	     },
    'clean' => {FILES => "t/httpd.loc"},
   );
-
-package MY;
-#sub tardist {
-#  my $inherited = shift->SUPER::dist(@_);
-#  "$inherited\tcvs log AuthCookie.pm | \$(PERL) changes.pl > Changes\n";
-#}

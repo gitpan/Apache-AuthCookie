@@ -1,3 +1,9 @@
+Version: 2.004  Date: 2000/03/15 20:53:20
+   Added documentation about the ability to set cookie domains.  That
+   ability actually appeared in 2.002, but I forgot to document it or add
+   notes to the Changes file.
+
+
 Version: 2.003  Date: 2000/03/14 21:08:02
    Now returns FORBIDDEN instead of AUTH_REQUIRED when authorization
    fails or when a user tries to access a protected doc.
