@@ -3,14 +3,13 @@ use strict;
 use warnings FATAL => 'all';
 use lib 'lib';
 
-use Apache::AuthCookie;
 use Apache::Test;
 use Apache::TestUtil;
 use Apache::TestRequest qw(GET POST GET_BODY);
 
 Apache::TestRequest::user_agent( reset => 1, requests_redirectable => 0 );
 
-plan tests => 19;
+plan tests => 21, need_lwp;
 
 ok 1;  # we loaded.
 
@@ -33,6 +32,8 @@ ok test_16();
 ok test_17();
 ok test_18();
 ok test_19();
+ok test_20();
+ok test_21();
 
 sub test_3 {
     my $url = '/docs/index.html';
@@ -290,6 +291,45 @@ sub test_19 {
     return ($r->code() == 403);
 }
 
+# Should succeed and cookie should have HttpOnly attribute
+sub test_20 {
+    my $r = POST('/LOGIN-HTTPONLY', [
+        destination  => '/docs/protected/get_me.html',
+        credential_0 => 'programmer',
+        credential_1 => 'Heroo'
+    ]);
+
+    print "# Location: ", $r->header('Location'), "\n",
+          "# Set-Cookie: ", $r->header('Set-Cookie'), "\n",
+          "# Code: ", $r->code, "\n";
+
+    return 0 unless
+       $r->header('Location') eq '/docs/protected/get_me.html';
+
+    return 0 unless 
+        $r->header('Set-Cookie') eq 'Sample::AuthCookieHandler_WhatEver=programmer:Heroo; path=/; HttpOnly';
+
+    return 0 unless $r->code == 302;
+
+    return 1;
+}
+
+# test SessionTimeout
+sub test_21 {
+    my $r = GET(
+        '/docs/stimeout/get_me.html',
+        Cookie => 'Sample::AuthCookieHandler_WhatEver=programmer:Hero'
+    );
+
+    # print STDERR "# Cookie", $r->header('Set-Cookie');
+
+    return 0 unless
+        $r->header('Set-Cookie') =~
+            /^Sample::AuthCookieHandler_WhatEver=.*expires=.+/;
+
+    return 1;
+}
+
 # get the "expected output" file for a given test and return its contents.
 sub get_expected {
     my ($fname) = @_;
@@ -302,3 +342,4 @@ sub get_expected {
     return $data;
 }
 
+# vim: ft=perl ts=4 ai et sw=4

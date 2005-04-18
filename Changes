@@ -1,3 +1,23 @@
+Version: 3.07
+ *** mod_perl2 users: THIS RELEASE IS INCOMPATIBLE WITH PAST RELEASES    ***
+ *** If you are running mod_perl2, you must update to at least           ***
+ *** mod_perl 2.0.0 RC5.  The mod_perl2 version of AuthCookie has been   ***
+ *** renamed to Apache2::AuthCookie                                      ***
+  ** MP2: RENAME AuthCookie.pm.mp2 to Apache2::AuthCookie.
+   - MP2: Update module, and tests for mod_perl 2.0.0 RC5.  mod_perl2 users
+     MUST use Apache2::AuthCookie now.
+   - Require Apache::Test 1.22
+   - Add support for ${auth_name}SessionTimeout configuration paramter
+     which will re-issue the ticket with the expires parameter set to the
+     value of this configuration setting for each request.  This is useful for
+     idle-timeout.
+   - POD fixes.
+   - MP2: fix uninitialized warnings if no POST/GET data (RT 11371)
+   - make sure recognize_user() returns an Apache constant in all cases.
+     Returns DECLINED in cases where we were returning undef before.
+     (Thanks Vivek)
+   - Add support for MS HttpOnly cookie property.
+
 Version: 3.06
   ** BUG FIX: AuthNameSatisfy (Any|All) directives were broken. AuthCookie
      was using AuthCookieSatisfy rather than ${auth_name}Satisfy.  If you
