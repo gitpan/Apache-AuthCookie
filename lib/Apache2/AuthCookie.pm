@@ -17,8 +17,8 @@ use APR::Table;
 use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.5 2005/04/18 05:23:34 mschout Exp $
-$VERSION = '3.07';
+# $Id: AuthCookie.pm,v 1.7 2005/04/19 02:36:45 mschout Exp $
+$VERSION = '3.08';
 
 sub recognize_user {
     my ($self, $r) = @_;
@@ -385,7 +385,8 @@ sub authorize {
 
     my $user = $r->user;
 
-    $r->server->log_error("authorize user=$user type=$auth_type");
+    $r->server->log_error("authorize user=$user type=$auth_type") if $debug >=3;
+
     unless ($user) {
         # user is either undef or =0 which means the authentication failed
         $r->server->log_error("No user authenticated", $r->uri);
@@ -1070,7 +1071,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.5 2005/04/18 05:23:34 mschout Exp $
+$Id: AuthCookie.pm,v 1.7 2005/04/19 02:36:45 mschout Exp $
 
 =head1 AUTHOR
 
