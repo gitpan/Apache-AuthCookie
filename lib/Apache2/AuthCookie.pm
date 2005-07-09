@@ -12,13 +12,13 @@ use Apache2::Log;
 use Apache2::Access;
 use Apache2::Response;
 use Apache2::Util;
-use Apache2::URI;
+use Apache2::AuthCookie::Util;
 use APR::Table;
 use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.7 2005/04/19 02:36:45 mschout Exp $
-$VERSION = '3.08';
+# $Id: AuthCookie.pm,v 1.12 2005/07/09 19:30:38 mschout Exp $
+$VERSION = '3.09_01';
 
 sub recognize_user {
     my ($self, $r) = @_;
@@ -73,7 +73,6 @@ sub cookie_name {
 
 sub handle_cache {
     my ($self, $r) = @_;
-    _check_request_rec(@_);
 
     my $auth_name = $r->auth_name;
 
@@ -87,7 +86,6 @@ sub handle_cache {
 
 sub remove_cookie {
     my ($self, $r) = @_;
-    _check_request_rec(@_);
 
     my $cookie_name = $self->cookie_name($r);
 
@@ -166,7 +164,7 @@ sub _get_form_data {
     my %args = ();
 
     if (defined $data) {
-        %args = map { Apache2::URI::unescape_url($_) }
+        %args = map { Apache2::AuthCookie::Util::unescape_uri($_) }
                 split /[=&;]/, $data;
     }
 
@@ -179,6 +177,7 @@ sub login {
     my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
     my $auth_type = $r->auth_type;
+    my $auth_name = $r->auth_name;
 
     my %args = $self->_get_form_data($r);
 
@@ -194,11 +193,14 @@ sub login {
 
     # Get the credentials from the data posted by the client
     my @credentials;
-    while (exists $args{"credential_" . scalar(@credentials)}) {
-        my $key = 'credential_'.scalar(@credentials);
+    for (my $i = 0; exists $args{"credential_$i"}; $i++) {
+        my $key = "credential_$i";
         $r->server->log_error("$key $args{$key}") if $debug >= 2;
         push @credentials, $args{$key};
     }
+
+    # save creds in pnotes so login form script can use them if it wants to
+    $r->pnotes("${auth_name}Creds", \@credentials);
 
     # Exchange the credentials for a session key.
     my $ses_key = $self->authen_cred($r, @credentials);
@@ -319,7 +321,6 @@ sub authenticate {
 
 sub login_form {
     my ($self, $r) = @_;
-    _check_request_rec(@_);
 
     my $auth_name = $r->auth_name;
 
@@ -439,7 +440,6 @@ sub authorize {
 
 sub send_cookie {
     my ($self, $r, $ses_key, $cookie_args) = @_;
-    _check_request_rec(@_);
 
     $cookie_args = {} unless defined $cookie_args;
 
@@ -511,7 +511,6 @@ sub cookie_string {
 
 sub key {
     my ($self, $r) = @_;
-    _check_request_rec(@_);
 
     my $cookie_name = $self->cookie_name($r);
 
@@ -526,24 +525,6 @@ sub get_cookie_path {
     my $auth_name = $r->auth_name;
 
     return $r->dir_config("${auth_name}Path");
-}
-
-# this just checks that the second arg is an Apache::RequestRec object.
-# if not, an exception is thrown.
-sub _check_request_rec {
-    my ($self, $r) = @_;
-
-    my $func = (caller)[3];
-
-    unless (defined $r) {
-        croak "missing Apache2::RequestRec argument to $func.",
-              "module not ported to mod_perl v2?";
-    }
-
-    unless (ref $r and $r->isa('Apache2::RequestRec')) {
-        croak "'$r' is not an Apache2::RequestRec object.",
-              "module not ported to mod_perl v2?";
-    }
 }
 
 1;
@@ -621,7 +602,7 @@ MethodHandlers, Authen, and Authz compiled in.
   AuthType Sample::AuthCookieHandler
   AuthName WhatEver
   SetHandler perl-script
-  PerlHandler Sample::AuthCookieHandler->login
+  PerlResponseHandler Sample::AuthCookieHandler->login
  </Files>
 
 =head1 DESCRIPTION
@@ -1071,7 +1052,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.7 2005/04/19 02:36:45 mschout Exp $
+$Id: AuthCookie.pm,v 1.12 2005/07/09 19:30:38 mschout Exp $
 
 =head1 AUTHOR
 

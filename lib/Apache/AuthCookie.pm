@@ -9,8 +9,8 @@ use Apache::AuthCookie::Util;
 use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.5 2005/04/19 02:36:39 mschout Exp $
-$VERSION = '3.08';
+# $Id: AuthCookie.pm,v 1.7 2005/07/09 19:19:01 mschout Exp $
+$VERSION = '3.09_01';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -132,12 +132,15 @@ sub login ($$) {
   
   # Get the credentials from the data posted by the client
   my @credentials;
-  while (exists $args{"credential_" . ($#credentials + 1)}) {
-    $r->log_error("credential_" . ($#credentials + 1) . " " .
-		  $args{"credential_" . ($#credentials + 1)}) if ($debug >= 2);
-    push(@credentials, $args{"credential_" . ($#credentials + 1)});
+  for (my $i = 0; exists $args{"credential_$i"}; $i++) {
+    my $key = "credential_$i";
+    $r->log_error("$key $args{$key}") if $debug >= 2;
+    push @credentials, $args{$key};
   }
-  
+
+  # save creds in pnotes in case login form script wants to use them.
+  $r->pnotes("${auth_name}Creds", \@credentials);
+
   # Exchange the credentials for a session key.
   my $ses_key = $self->authen_cred($r, @credentials);
   unless ($ses_key) {
@@ -993,7 +996,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.5 2005/04/19 02:36:39 mschout Exp $
+$Id: AuthCookie.pm,v 1.7 2005/07/09 19:19:01 mschout Exp $
 
 =head1 AUTHOR
 
