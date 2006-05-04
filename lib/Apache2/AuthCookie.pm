@@ -3,7 +3,8 @@ package Apache2::AuthCookie;
 use strict;
 
 use Carp;
-use mod_perl2 qw(1.9922 StackedHandlers MethodHandlers Authen Authz);
+use CGI '3.12';
+use mod_perl2 '1.9922';
 
 use Apache::AuthCookie::Util;
 use Apache2::RequestRec;
@@ -12,13 +13,12 @@ use Apache2::Log;
 use Apache2::Access;
 use Apache2::Response;
 use Apache2::Util;
-use Apache2::AuthCookie::Util;
 use APR::Table;
 use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.12 2005/07/09 19:30:38 mschout Exp $
-$VERSION = '3.09_01';
+# $Id: AuthCookie.pm,v 1.18 2006/05/04 05:08:25 mschout Exp $
+$VERSION = '3.09';
 
 sub recognize_user {
     my ($self, $r) = @_;
@@ -121,7 +121,9 @@ sub _convert_to_get {
              or $name =~ /^credential_\d+$/;
 
         $value = '' unless defined $value;
-        push @pairs, escape_uri($r, $name) . '=' . escape_uri($r, $value);
+        for my $v (split /\0/, $value) {
+            push @pairs, escape_uri($r, $name) . '=' . escape_uri($r, $v);
+        }
     }
 
     $r->args(join '&', @pairs) if scalar(@pairs) > 0;
@@ -142,33 +144,9 @@ sub _get_form_data {
 
     my $data = '';
 
-    if ($r->method eq 'POST') {
-        # $r->content doesnt exist anymore. This is the Apache::compat
-        # version.  Maybe there is more efficient way to do this...
-        $r->setup_client_block;
+    my $cgi = CGI->new($r);
 
-        return unless $r->should_client_block;
-
-        my $buf;
-        while (my $read_len = $r->get_client_block($buf, 8192)) {
-            if ($read_len == -1) {
-                die "get_client_block() error";
-            }
-            $data .= $buf;
-        }
-    }
-    else {
-        $data = $r->args;
-    }
-
-    my %args = ();
-
-    if (defined $data) {
-        %args = map { Apache2::AuthCookie::Util::unescape_uri($_) }
-                split /[=&;]/, $data;
-    }
-
-    return %args;
+    return $cgi->Vars();
 }
 
 sub login {
@@ -247,7 +225,8 @@ sub authenticate {
     $r->server->log_error("auth_type " . $auth_type) if ($debug >= 3);
 
     unless ($r->is_initial_req) {
-        # only authenticate the first internal redirect
+        # we are in a subrequest.  Just copy user from previous request.
+        $r->user( $r->prev->user );
         return OK;
     }
 
@@ -692,6 +671,18 @@ command
 into your server setup file and your cookies for this AuthCookie realm will be
 named MyCustomName.  Default is AuthType_AuthName.
 
+=item 6.
+
+By default users must satisfy ALL of the C<require> directives.  If you
+want authentication to succeed if ANY C<require> directives are met, use the
+C<Satisfy> directive.  For instance, if your AuthName is C<WhatEver>, you can
+put the command
+
+ PerlSetVar WhatEverSatisfy Any
+
+into your server startup file and authentication for this realm will succeed if
+ANY of the C<require> directives are met.
+
 =back
 
 This is the flow of the authentication handler, less the details of the
@@ -797,12 +788,6 @@ in your subclass, which will then be called.  The method will be
 called as C<$r-E<gt>species($r, $args)>, where C<$args> is everything
 on your C<require> line after the word C<species>.  The method should
 return OK on success and HTTP_FORBIDDEN on failure.
-
-Currently users must satisfy ALL of the C<require> directives.  I have
-heard that other Apache modules let the user satisfy ANY of the
-C<require> directives.  I don't know which is correct, I haven't found
-any Apache docs on the matter.  If you need one behavior or the other,
-be careful.  I may change it if I discover that ANY is correct.
 
 =item * authen_cred()
 
@@ -1052,7 +1037,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.12 2005/07/09 19:30:38 mschout Exp $
+$Id: AuthCookie.pm,v 1.18 2006/05/04 05:08:25 mschout Exp $
 
 =head1 AUTHOR
 

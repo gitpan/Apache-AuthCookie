@@ -9,8 +9,8 @@ use Apache::AuthCookie::Util;
 use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.7 2005/07/09 19:19:01 mschout Exp $
-$VERSION = '3.09_01';
+# $Id: AuthCookie.pm,v 1.11 2006/05/04 05:08:25 mschout Exp $
+$VERSION = '3.09';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -106,8 +106,12 @@ sub _convert_to_get {
            or $name =~ /^credential_\d+$/;
 
       $value = '' unless defined $value;
-      push @pairs, escape_uri($name) . '=' . escape_uri($value);
+
+      for my $v (split /\0/, $value) {
+        push @pairs, escape_uri($name) . '=' . escape_uri($v);
+      }
     }
+
     $r->args(join '&', @pairs) if scalar(@pairs) > 0;
 
     $r->method('GET');
@@ -115,12 +119,31 @@ sub _convert_to_get {
     $r->headers_in->unset('Content-Length');
 }
 
+sub _get_form_data {
+    my ($self, $r) = @_;
+
+    my @pairs = $r->method eq 'POST' ? $r->content : $r->args;
+
+    my %vars = ();
+
+    while (my ($name, $value) = splice @pairs, 0, 2) {
+      unless (defined $vars{$name}) {
+        $vars{$name} = $value;
+      }
+      else {
+        $vars{$name} .= "\0$value";
+      }
+    }
+
+    return %vars;
+}
+
 sub login ($$) {
   my ($self, $r) = @_;
   my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
   my ($auth_type, $auth_name) = ($r->auth_type, $r->auth_name);
-  my %args = $r->method eq 'POST' ? $r->content : $r->args;
+  my %args = $self->_get_form_data($r);
 
   $self->_convert_to_get($r, \%args) if $r->method eq 'POST';
 
@@ -191,7 +214,12 @@ sub authenticate ($$) {
   my $debug = $r->dir_config("AuthCookieDebug") || 0;
   
   $r->log_error("auth_type " . $auth_type) if ($debug >= 3);
-  return OK unless $r->is_initial_req; # Only authenticate the first internal request
+
+  unless ($r->is_initial_req) {
+    # we are in a subrequest.  Jus tcopy user from previous request.
+    $r->connection->user($r->prev->connection->user);
+    return OK;
+  }
   
   if ($r->auth_type ne $auth_type) {
     # This location requires authentication because we are being called,
@@ -260,7 +288,7 @@ sub login_form {
   my $r = Apache->request or die "no request";
   my $auth_name = $r->auth_name;
 
-  my %args = $r->method eq 'POST' ? $r->content : $r->args;
+  my %args = $self->_get_form_data($r);
 
   $self->_convert_to_get($r, \%args) if $r->method eq 'POST';
 
@@ -613,6 +641,18 @@ command
 into your server setup file and your cookies for this AuthCookie realm will be
 named MyCustomName.  Default is AuthType_AuthName.
 
+=item 6.
+
+By default users must satisfy ALL of the C<require> directives.  If you
+want authentication to succeed if ANY C<require> directives are met, use the
+C<Satisfy> directive.  For instance, if your AuthName is C<WhatEver>, you can
+put the command
+
+ PerlSetVar WhatEverSatisfy Any
+
+into your server startup file and authentication for this realm will succeed if
+ANY of the C<require> directives are met.
+
 =back
 
 This is the flow of the authentication handler, less the details of the
@@ -718,12 +758,6 @@ in your subclass, which will then be called.  The method will be
 called as C<$r-E<gt>species($r, $args)>, where C<$args> is everything
 on your C<require> line after the word C<species>.  The method should
 return OK on success and FORBIDDEN on failure.
-
-Currently users must satisfy ALL of the C<require> directives.  I have
-heard that other Apache modules let the user satisfy ANY of the
-C<require> directives.  I don't know which is correct, I haven't found
-any Apache docs on the matter.  If you need one behavior or the other,
-be careful.  I may change it if I discover that ANY is correct.
 
 =item * authen_cred()
 
@@ -996,7 +1030,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.7 2005/07/09 19:19:01 mschout Exp $
+$Id: AuthCookie.pm,v 1.11 2006/05/04 05:08:25 mschout Exp $
 
 =head1 AUTHOR
 
