@@ -9,8 +9,8 @@ use Apache::AuthCookie::Util;
 use Apache::Util qw(escape_uri);
 use vars qw($VERSION);
 
-# $Id: AuthCookie.pm,v 1.12 2006/06/05 01:12:51 mschout Exp $
-$VERSION = '3.10';
+# $Id: AuthCookie.pm 222 2008-02-29 18:40:40Z mschout $
+$VERSION = '3.11';
 
 sub recognize_user ($$) {
   my ($self, $r) = @_;
@@ -186,8 +186,16 @@ sub login ($$) {
 
   $self->handle_cache;
 
-  $r->header_out("Location" => $args{'destination'});
+  $r->header_out(
+    "Location" => $self->untaint_destination($args{'destination'}));
+
   return REDIRECT;
+}
+
+sub untaint_destination {
+  my ($self, $dest) = @_;
+
+  return Apache::AuthCookie::Util::escape_destination($dest);
 }
 
 sub logout($$) {
@@ -875,6 +883,15 @@ handy inside a method that implements a C<require> directive check
 (like the C<species> method discussed above) if you put any extra
 information like clearances or whatever into the session key.
 
+=item * untaint_destination($self, $uri)
+
+This method returns a modified version of the destination parameter
+before embedding it into the response header. Per default it escapes
+CR, LF and TAB characters of the uri to avoid certain types of
+security attacks. You can override it to more limit the allowed
+destinations, e.g., only allow relative uris, only special hosts or
+only limited set of characters.
+
 =back
 
 =head1 UPGRADING FROM VERSION 1.4
@@ -982,7 +999,7 @@ method can set arbitrary entries in C<$r-E<gt>subprocess_env>.
 
 If you want to let users log themselves out (something that can't be
 done using Basic Auth), you need to create a logout script.  For an
-example, see t/eg/logout.pl.  Logout scripts may want to take
+example, see t/htdocs/docs/logout.pl.  Logout scripts may want to take
 advantage of AuthCookie's C<logout()> method, which will set the
 proper cookie headers in order to clear the user's cookie.  This
 usually looks like C<$r-E<gt>auth_type-E<gt>logout($r);>.
@@ -1032,7 +1049,7 @@ implement anything, though.
 
 =head1 CVS REVISION
 
-$Id: AuthCookie.pm,v 1.12 2006/06/05 01:12:51 mschout Exp $
+$Id: AuthCookie.pm 222 2008-02-29 18:40:40Z mschout $
 
 =head1 AUTHOR
 

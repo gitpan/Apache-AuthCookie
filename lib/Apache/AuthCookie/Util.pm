@@ -3,7 +3,7 @@ package Apache::AuthCookie::Util;
 use strict;
 use vars '$VERSION';
 
-$VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+$VERSION = do { my @r = (q$Revision: 222 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
 
 # -- expires() shamelessly taken from CGI::Util
 sub expires {
@@ -61,6 +61,16 @@ sub expire_calc {
         return $time;
     }
     return (time+$offset);
+}
+
+# escape embedded CR, LF, TAB's to prevent possible XSS attacks.
+# see http://www.securiteam.com/securityreviews/5WP0E2KFGK.html
+sub escape_destination {
+    my $text = shift;
+
+    $text =~ s/([\r\n\t])/sprintf("%%%02X", ord $1)/ge;
+
+    return $text;
 }
 
 1;
