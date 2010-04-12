@@ -21,9 +21,13 @@ my %makeconf = (
     }
 );
 
+if (MM->can('signature_target')) {
+    $makeconf{SIGN} = 1;
+}
+
 if ($mp_version == 2) {
-    # 1.9922 == 2.0.0 RC5. mod_perl -> mod_perl2 renamed here.
-    $makeconf{PREREQ_PM}{mod_perl2} = '1.9922';
+    # 1.999022 == 2.0.0 RC5. mod_perl -> mod_perl2 renamed here.
+    $makeconf{PREREQ_PM}{mod_perl2} = '1.999022';
     # CGI.pm 3.12 is required to work with mod_perl2
     $makeconf{PREREQ_PM}{CGI} = '3.12';
 }

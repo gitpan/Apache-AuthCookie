@@ -5,7 +5,7 @@ use Apache::Constants qw(:common);
 use Apache::AuthCookie;
 use vars qw($VERSION @ISA);
 
-$VERSION = substr(q$Revision: 220 $, 10);
+$VERSION = substr(q$Revision$, 10);
 @ISA = qw(Apache::AuthCookie);
 
 sub authen_cred ($$\@) {
