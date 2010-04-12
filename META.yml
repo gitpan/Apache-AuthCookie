@@ -4,7 +4,6 @@ author:
   - 'Michael Schout <mschout@cpan.org>'
 build_requires:
   Apache: 0
-  Apache2::RequestIO: 0
   Apache::Test: 0
   Apache::TestRequest: 0
   Apache::TestRunPerl: 0
@@ -12,7 +11,6 @@ build_requires:
   Module::Signature: 0
   Socket: 0
   Test::More: 0
-  blib: 0
   constant: 0
   vars: 0
 configure_requires: {}
@@ -43,4 +41,4 @@ resources:
   bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=Apache-AuthCookie
   homepage: http://search.cpan.org/dist/Apache-AuthCookie/
   repository: http://github.com/mschout/apache-authcookie
-version: 3.13
+version: 3.14

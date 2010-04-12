@@ -1,6 +1,6 @@
 Revision history for Apache::AuthCookie
 
-3.13  2010-04-12
+3.14  2010-04-12
    - MP2: doc updates: remove beta warnings, change Apache::AuthCookie to
      Apache2::Authcookie where appopriate.
    - docs: change my email to my cpan address
@@ -11,6 +11,9 @@ Revision history for Apache::AuthCookie
    - update mod_perl2 prereq version (still 2.0.0 RC5, but version number was
      incorrect in Makefile.PL)
    - use Dist::Zilla for building the dist
+
+3.13  2010-04-12
+   - removed: bad dist
 
 Version: 3.12
    - Makefile.PL If no mod_perl version is found, just require mod_perl2.
