@@ -8,8 +8,8 @@ README
 README.modperl2
 SIGNATURE
 dist.ini
-weaver.ini
 lib/Apache/AuthCookie.pm
+lib/Apache/AuthCookie/FAQ.pod
 lib/Apache/AuthCookie/Util.pm
 lib/Apache2/AuthCookie.pm
 t/Skeleton/AuthCookieHandler.pm
@@ -30,3 +30,4 @@ t/lib/Sample/AuthCookieHandler.pm.mp2
 t/real.t
 t/signature.t
 t/startup.pl
+weaver.ini

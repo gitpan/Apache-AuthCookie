@@ -1,6 +1,6 @@
 package Apache2::AuthCookie;
 BEGIN {
-  $Apache2::AuthCookie::VERSION = '3.14';
+  $Apache2::AuthCookie::VERSION = '3.15';
 }
 
 # ABSTRACT: Perl Authentication and Authorization via cookies
@@ -23,6 +23,9 @@ use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY);
 
 sub recognize_user {
     my ($self, $r) = @_;
+
+    # only check if user is not already set
+    return DECLINED if $r->user;
 
     my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
@@ -441,16 +444,21 @@ sub send_cookie {
         %$cookie_args
     );
 
-    my $auth_name = $r->auth_name;
-
-    # add a P3P header if user has configured it.
-    if (my $p3p = $r->dir_config("${auth_name}P3P")) {
-        $r->err_headers_out->set(P3P => $p3p);
-    }
+    $self->send_p3p($r);
 
     $r->err_headers_out->add("Set-Cookie" => $cookie);
 }
 
+# send P3P header if configured with ${auth_name}P3P
+sub send_p3p {
+    my ($self, $r) = @_;
+
+    my $auth_name = $r->auth_name;
+
+    if (my $p3p = $r->dir_config("${auth_name}P3P")) {
+        $r->err_headers_out->set(P3P => $p3p);
+    }
+}
 
 # cookie_string takes named parameters:
 #    request
@@ -528,7 +536,7 @@ Apache2::AuthCookie - Perl Authentication and Authorization via cookies
 
 =head1 VERSION
 
-version 3.14
+version 3.15
 
 =head1 SYNOPSIS
 
@@ -1063,7 +1071,7 @@ L<perl(1)>, L<mod_perl(1)>, L<Apache(1)>.
 
 =head1 AUTHOR
 
-  Michael Schout <mschout@cpan.org>
+Michael Schout <mschout@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -1071,14 +1079,6 @@ This software is copyright (c) 2000 by Ken Williams.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
-
-=head1 SOURCE
-
-You can contribute or fork this project via github:
-
-http://github.com/mschout/apache-authcookie
-
- git clone git://github.com/mschout/apache-authcookie.git
 
 =head1 BUGS
 

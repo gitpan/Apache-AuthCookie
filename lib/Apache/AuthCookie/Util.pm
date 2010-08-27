@@ -1,6 +1,6 @@
 package Apache::AuthCookie::Util;
 BEGIN {
-  $Apache::AuthCookie::Util::VERSION = '3.14';
+  $Apache::AuthCookie::Util::VERSION = '3.15';
 }
 
 # ABSTRACT: Internal Utility Functions for AuthCookie
@@ -86,11 +86,11 @@ Apache::AuthCookie::Util - Internal Utility Functions for AuthCookie
 
 =head1 VERSION
 
-version 3.14
+version 3.15
 
 =head1 AUTHOR
 
-  Michael Schout <mschout@cpan.org>
+Michael Schout <mschout@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -98,14 +98,6 @@ This software is copyright (c) 2000 by Ken Williams.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
-
-=head1 SOURCE
-
-You can contribute or fork this project via github:
-
-http://github.com/mschout/apache-authcookie
-
- git clone git://github.com/mschout/apache-authcookie.git
 
 =head1 BUGS
 

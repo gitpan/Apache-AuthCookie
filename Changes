@@ -1,5 +1,12 @@
 Revision history for Apache::AuthCookie
 
+3.15  2010-08-27
+   - enable Dist::Zilla Manifest plugin
+   - add FAQ
+   - add FAQ entry on how to protect an entire site/document root
+   - recognize_user: return DECLINED if user is already set
+   - refactor P3P header generation into send_p3p($r) so subclasses can overload it
+
 3.14  2010-04-12
    - MP2: doc updates: remove beta warnings, change Apache::AuthCookie to
      Apache2::Authcookie where appopriate.

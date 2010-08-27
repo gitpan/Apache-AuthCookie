@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.55.
+signed via the Module::Signature module, version 0.64.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,18 +14,19 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 948bcfd3397cd631b85c610abf1550a0bb158016 Changes
+SHA1 b051315ca9afa7d98465255db69549e07a8143a5 Changes
 SHA1 7d1820bf12e59c0b8e038142cda4f053e1e2cf12 LICENSE
-SHA1 1313fbe5d53304c0ac25d5d6dfbfbb617f8abaab MANIFEST
+SHA1 2843199aa723d685e5db9efece37d3c51c43c93e MANIFEST
 SHA1 59c4911d65c0befcd4768bcf3096664a14cab58f MANIFEST.SKIP
-SHA1 ee16a06882990059b67fcc44332b84e67abd0439 META.yml
+SHA1 0638af3d47597479bd16d197379c438711227ce6 META.yml
 SHA1 60df4ec57cfda67ed90647e5fc020e79d7ce381e Makefile.PL
 SHA1 b9945378262a25db34dcdba06da956a52876188b README
 SHA1 ccbc46a0385aabadd1e6f4a22f8d4ebb11b44901 README.modperl2
-SHA1 521459ceef5288e408b8d567cdc2cae08c17d3f4 dist.ini
-SHA1 c892f35941cd6f8f74781e452efbd03c2c264852 lib/Apache/AuthCookie.pm
-SHA1 c5b2155147fbd761fe8b2839db5d8dce81afe30e lib/Apache/AuthCookie/Util.pm
-SHA1 a978f9ad64503c44480caa938f6ed1d1502f2e40 lib/Apache2/AuthCookie.pm
+SHA1 ea271e6867f1128dc571120b32a4162bc98a8af0 dist.ini
+SHA1 8e28ebd3f1e7aa1540974c1faf467c555ce23a39 lib/Apache/AuthCookie.pm
+SHA1 2b257f982a99e4034f7cbffe39dee79d476e847f lib/Apache/AuthCookie/FAQ.pod
+SHA1 e889e44238a148cb46b79f42086a9931fe6d54fc lib/Apache/AuthCookie/Util.pm
+SHA1 7ed5b82a5e1d585b0414c21ab038498a1ba25315 lib/Apache2/AuthCookie.pm
 SHA1 3ac8de46e7bba83f6969caec3c9c14cbd99881cb t/Skeleton/AuthCookieHandler.pm
 SHA1 b1f854e6edecbdd44fc7b8db719e0fe21d9340d1 t/TEST.PL
 SHA1 6022c91ff5077d513466930547f59eceb312677b t/conf/extra.conf.in
@@ -46,9 +47,9 @@ SHA1 61cea839dd94aaaeb301ccac9b83cde4c5c91b42 t/signature.t
 SHA1 e91bf0ef7d63322eaf15ca7d9907c6db47ce90ca t/startup.pl
 SHA1 b683e5354a6b991da17a94e51852513b95acb60b weaver.ini
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-iEYEARECAAYFAkvDVt4ACgkQ+CqvSzp9LOzKCACfdn6Pp2/R7VWOx/Sr5GGnysb8
-2fMAn0HaUveeJAbNdP1TM/G1d7ODr1E+
-=fKUs
+iEYEARECAAYFAkx4Dy0ACgkQ+CqvSzp9LOyDPACeNNzZH0xmh3S6JFITj37xwJjE
+SQcAoMA2Hnwl9UWkZ2F2urcry5vR6QvH
+=UVPV
 -----END PGP SIGNATURE-----
