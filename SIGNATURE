@@ -14,22 +14,21 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 ecc040ec875e6edebc1fddbbdd22e2712b71aab8 Changes
+SHA1 25cbf7b5278bf864cb279efbf8c4acbc6212b5f6 Changes
 SHA1 7d1820bf12e59c0b8e038142cda4f053e1e2cf12 LICENSE
-SHA1 2843199aa723d685e5db9efece37d3c51c43c93e MANIFEST
-SHA1 59c4911d65c0befcd4768bcf3096664a14cab58f MANIFEST.SKIP
-SHA1 3b7cd324ecfeb7160db2d7e3eb86f79021fb23ac META.yml
-SHA1 c8e4e406a18dbc23942c808cbe8edf74e4286c39 Makefile.PL
+SHA1 ca06008e1d9794e853bbf528d586c75fd42906bf MANIFEST
+SHA1 65ac9daeb4b3a197c69eb953500174519565b7b1 MANIFEST.SKIP
+SHA1 2073e42d26fda2e2f8f8204cc0aeabe6e2929d33 META.yml
+SHA1 12c1151249e6c770cbf5fb436f07994cf13c8914 Makefile.PL
 SHA1 b9945378262a25db34dcdba06da956a52876188b README
 SHA1 ccbc46a0385aabadd1e6f4a22f8d4ebb11b44901 README.modperl2
-SHA1 d12b9c8f619f07d775069348f10a7b4b924d30e9 dist.ini
-SHA1 3b86ac9f25c5d0d368acb87a9f5933e418464c7e lib/Apache/AuthCookie.pm
-SHA1 b8f2dcb31a29f69dd3677dc7a95efaf315b14643 lib/Apache/AuthCookie/FAQ.pod
-SHA1 6d1ef19d1bcf0b1c7d87c13def348ba43aa3d3ac lib/Apache/AuthCookie/Util.pm
-SHA1 41af674f25568d24ed82097541742a962d418938 lib/Apache2/AuthCookie.pm
+SHA1 3d660b7ee7542d4007830d8465339c2dcb8b3c37 lib/Apache/AuthCookie.pm
+SHA1 969bdf0df1f648add0e4fa34663c9ffc416562de lib/Apache/AuthCookie/FAQ.pod
+SHA1 e89ae24ad97dd5c92fd0eda0be00e848ddd85ea9 lib/Apache/AuthCookie/Util.pm
+SHA1 84586f6f4e686d4816ecc2c33b0c3a3d5e9abfb0 lib/Apache2/AuthCookie.pm
 SHA1 3ac8de46e7bba83f6969caec3c9c14cbd99881cb t/Skeleton/AuthCookieHandler.pm
 SHA1 b1f854e6edecbdd44fc7b8db719e0fe21d9340d1 t/TEST.PL
-SHA1 6022c91ff5077d513466930547f59eceb312677b t/conf/extra.conf.in
+SHA1 7327b0e1654ff25270cbc5cbbb520beb02c682e9 t/conf/extra.conf.in
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/authall/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/authany/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/cookiename/get_me.html
@@ -40,16 +39,15 @@ SHA1 265a521106577a583f7c9996ddcdfc10b6a8c721 t/htdocs/docs/logout.pl
 SHA1 ab072fcdac74514bcec4303267652a373ffa627c t/htdocs/docs/protected/echo_user.pl
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/protected/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/stimeout/get_me.html
-SHA1 f9ac886a22a7a361ca22d1c0774cc99a74e1070c t/lib/Sample/AuthCookieHandler.pm.mp1
-SHA1 6b70d3c4fa4b6045a485443d6c9376d47af8186d t/lib/Sample/AuthCookieHandler.pm.mp2
-SHA1 3d566bc264732688d5c0ecf32e489c5517bf4b45 t/real.t
+SHA1 f9ee8ec602b3eac1ef205afcbfb45815380bd72a t/lib/Sample/Apache/AuthCookieHandler.pm
+SHA1 d7411c352d21011de8fad9d14ab999424ae944fb t/lib/Sample/Apache2/AuthCookieHandler.pm
+SHA1 07317653d24f20b6c185162ad5d22ad73befd026 t/real.t
 SHA1 61cea839dd94aaaeb301ccac9b83cde4c5c91b42 t/signature.t
 SHA1 e91bf0ef7d63322eaf15ca7d9907c6db47ce90ca t/startup.pl
-SHA1 b683e5354a6b991da17a94e51852513b95acb60b weaver.ini
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iEYEARECAAYFAk03ap4ACgkQ+CqvSzp9LOylywCgjygbIaxDlEW8G5y8pJb8zAtZ
-WK0AoIEwbNGVUYcFvg1tlqyzT6zdTzW4
-=GxnS
+iEYEARECAAYFAk09uFIACgkQ+CqvSzp9LOzFcACgyI+9jjgR2sAvRRUyQ9sK3SA2
+7HgAoKQF8ZFMtKRMfzX5zxgJ2M5BYJP5
+=kJD8
 -----END PGP SIGNATURE-----

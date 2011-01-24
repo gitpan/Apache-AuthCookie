@@ -8,13 +8,14 @@
 ^t/db/
 ~$
 error_log
+^dist\.ini
+^weaver\.ini
 ^t/httpd.loc
-^t/lib/Sample/AuthCookieHandler.pm$
 
 # Apache::Test generated files
-^t/lib/Sample/AuthCookieHandler.pm$
 ^t/conf/extra.conf$
 ^t/conf/httpd.conf$
+^t/conf/mime.types$
 ^t/conf/modperl_inc.pl$
 ^t/conf/modperl_startup.pl$
 ^t/conf/apache_test_config.pm$
