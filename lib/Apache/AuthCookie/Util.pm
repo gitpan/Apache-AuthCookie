@@ -1,6 +1,6 @@
 package Apache::AuthCookie::Util;
-BEGIN {
-  $Apache::AuthCookie::Util::VERSION = '3.18';
+{
+  $Apache::AuthCookie::Util::VERSION = '3.19_01';
 }
 
 # ABSTRACT: Internal Utility Functions for AuthCookie
@@ -75,9 +75,21 @@ sub escape_destination {
     return $text;
 }
 
+# return true if the given user agent understands a HTTP_FORBIDDEN response
+# with custom content. Some agents (e.g.: Symbian OS browser), use their own
+# HTML and completely ignore the HTTP content.
+sub understands_forbidden_response {
+    my $ua = shift;
+
+    return 0 if $ua =~ qr{\AMozilla/5\.0 \(SymbianOS/};
+
+    return 1;
+}
+
 1;
 
 __END__
+
 =pod
 
 =head1 NAME
@@ -86,11 +98,21 @@ Apache::AuthCookie::Util - Internal Utility Functions for AuthCookie
 
 =head1 VERSION
 
-version 3.18
+version 3.19_01
+
+=head1 SOURCE
+
+The development version is on github at L<http://github.com/mschout/apache-authcookie>
+and may be cloned from L<git://github.com/mschout/apache-authcookie.git>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to bug-apache-authcookie@rt.cpan.org or through the web interface at:
+ http://rt.cpan.org/Public/Dist/Display.html?Name=Apache-AuthCookie
 
 =head1 AUTHOR
 
-  Michael Schout <mschout@cpan.org>
+Michael Schout <mschout@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -99,10 +121,4 @@ This software is copyright (c) 2000 by Ken Williams.
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
-=head1 BUGS
-
-Please report any bugs or feature requests to bug-apache-authcookie@rt.cpan.org or through the web interface at:
- http://rt.cpan.org/Public/Dist/Display.html?Name=Apache-AuthCookie
-
 =cut
-

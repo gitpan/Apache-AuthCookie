@@ -14,7 +14,7 @@ use Apache::TestRequest qw(GET POST GET_BODY);
 
 Apache::TestRequest::user_agent( reset => 1, requests_redirectable => 0 );
 
-plan tests => 39, need_lwp;
+plan tests => 47, need_lwp;
 
 ok 1;  # we loaded.
 
@@ -205,6 +205,30 @@ ok 1;  # we loaded.
          'AuthAny access allowed');
 }
 
+# any requirement, username=0 works.
+{
+    my $r = GET(
+        '/docs/authany/get_me.html',
+        Cookie => 'Sample::AuthCookieHandler_WhatEver=0:mypassword'
+    );
+
+    like($r->content, qr/Congratulations, you got past AuthCookie/,
+         'username=0 access allowed');
+}
+
+# login with username=0 works
+{
+    my $r = POST('/LOGIN', [
+        destination  => '/docs/authany/get_me.html',
+        credential_0 => '0',
+        credential_1 => 'mypassword'
+    ]);
+
+    is($r->code, 302, 'username=0 login produces redirect');
+    is($r->header('Location'), '/docs/authany/get_me.html',
+       'redirect header exists, and contains expected url');
+}
+
 # should fail: AuthAny and NONE of the requirements are met.
 {
     my $r = GET(
@@ -340,6 +364,34 @@ ok 1;  # we loaded.
     );
 
     like($r->content, qr/User: programmer/);
+}
+
+# test login form response status=OK with SymbianOS
+{
+    my $orig_agent = Apache::TestRequest::user_agent()->agent;
+
+    # should get a 403 response by default
+    my $r = GET('/docs/protected/get_me.html');
+    is $r->code, 403;
+    like $r->content, qr/\bcredential_0\b/, 'got login form';
+
+    Apache::TestRequest::user_agent()
+        ->agent('Mozilla/5.0 (SymbianOS/9.1; U; [en]; Series60/3.0 NokiaE60/4.06.0) AppleWebKit/413 (KHTML, like Gecko) Safari/413');
+
+    # should get a 200 response for SymbianOS
+    $r = GET('/docs/protected/get_me.html');
+    is $r->code, 200;
+    like $r->content, qr/\bcredential_0\b/, 'got login form';
+
+    Apache::TestRequest::user_agent()->agent($orig_agent);
+}
+
+{
+    # recognize user
+    my $body = GET_BODY('/docs/echo-user.pl',
+        Cookie => 'Sample::AuthCookieHandler_WhatEver=programmer:Hero');
+
+    is $body, 'programmer';
 }
 
 # remove CR's from a string.  Win32 apache apparently does line ending

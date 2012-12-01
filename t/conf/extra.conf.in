@@ -51,6 +51,7 @@ PerlSetVar WhatEverCookieName Sample::AuthCookieHandler_WhatEver
   </IfDefine>
   Require user some-user
   Require user programmer
+  Require user 0
 </Location>
 
 # must satisfy all requirements
@@ -108,10 +109,12 @@ PerlSetVar WhatEverCookieName Sample::AuthCookieHandler_WhatEver
   <IfDefine APACHE1>
     PerlHandler Apache::Registry
     AuthType Sample::Apache::AuthCookieHandler
+    PerlFixupHandler Sample::Apache::AuthCookieHandler->recognize_user
   </IfDefine>
   <IfDefine APACHE2>
     PerlResponseHandler ModPerl::Registry
     AuthType Sample::Apache2::AuthCookieHandler
+    PerlFixupHandler Sample::Apache2::AuthCookieHandler->recognize_user
   </IfDefine>
 </FilesMatch>
 

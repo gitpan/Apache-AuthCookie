@@ -1,6 +1,6 @@
 package Apache2::AuthCookie;
-BEGIN {
-  $Apache2::AuthCookie::VERSION = '3.18';
+{
+  $Apache2::AuthCookie::VERSION = '3.19_01';
 }
 
 # ABSTRACT: Perl Authentication and Authorization via cookies
@@ -12,29 +12,31 @@ use CGI '3.12';
 use mod_perl2 '1.99022';
 
 use Apache::AuthCookie::Util;
+use Apache2::AuthCookie::Params;
 use Apache2::RequestRec;
 use Apache2::RequestUtil;
 use Apache2::Log;
 use Apache2::Access;
 use Apache2::Response;
 use Apache2::Util;
+use Apache::AuthCookie::Autobox;
 use APR::Table;
-use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY);
+use Apache2::Const qw(:common M_GET HTTP_FORBIDDEN HTTP_MOVED_TEMPORARILY HTTP_OK);
 
 sub recognize_user {
     my ($self, $r) = @_;
 
     # only check if user is not already set
-    return DECLINED if $r->user;
+    return DECLINED unless $r->user->is_blank;
 
     my $debug = $r->dir_config("AuthCookieDebug") || 0;
 
     my $auth_type = $r->auth_type;
     my $auth_name = $r->auth_name;
 
-    return DECLINED unless $auth_type and $auth_name;
+    return DECLINED if $auth_type->is_blank or $auth_name->is_blank;
 
-    return DECLINED unless $r->headers_in->get('Cookie');
+    return DECLINED if $r->headers_in->get('Cookie')->is_blank;
 
     my $cookie = $self->key($r);
     my $cookie_name = $self->cookie_name($r);
@@ -42,11 +44,11 @@ sub recognize_user {
     $r->server->log_error("cookie $cookie_name is $cookie")
         if $debug >= 2;
 
-    return DECLINED unless $cookie;
+    return DECLINED if $cookie->is_blank;
 
     my ($user,@args) = $auth_type->authen_ses_key($r, $cookie);
 
-    if ($user and scalar @args == 0) {
+    if (!$user->is_blank and scalar @args == 0) {
         $r->server->log_error("user is $user") if $debug >= 2;
 
         # send cookie with update expires timestamp if session timeout is on
@@ -60,7 +62,7 @@ sub recognize_user {
         return $auth_type->custom_errors($r, $user, @args);
     }
 
-    return OK;
+    return $user->is_blank ? DECLINED : OK;
 }
 
 sub cookie_name {
@@ -103,14 +105,12 @@ sub remove_cookie {
     );
 
     $r->err_headers_out->add("Set-Cookie" => "$str");
-    $r->server->log_error("removed_cookie ".
-                          $r->err_headers_out->get("Set-Cookie"))
-        if $debug >= 2;
+    $r->server->log_error("removed cookie $cookie_name") if $debug >= 2;
 }
 
 # convert current request to GET
 sub _convert_to_get {
-    my ($self, $r, $args) = @_;
+    my ($self, $r) = @_;
 
     return unless $r->method eq 'POST';
 
@@ -118,14 +118,16 @@ sub _convert_to_get {
 
     $r->server->log_error("Converting POST -> GET") if $debug >= 2;
 
-    my @pairs =();
-    while (my ($name, $value) = each %$args) {
+    my $args = $self->params($r);
+
+    my @pairs = ();
+
+    for my $name ($args->param) {
         # we dont want to copy login data, only extra data
         next if $name eq 'destination'
              or $name =~ /^credential_\d+$/;
 
-        $value = '' unless defined $value;
-        for my $v (split /\0/, $value) {
+        for my $v ($args->param($name)) {
             push @pairs, escape_uri($r, $name) . '=' . escape_uri($r, $v);
         }
     }
@@ -143,14 +145,10 @@ sub escape_uri {
 }
 
 # get GET or POST data and return hash containing the data.
-sub _get_form_data {
+sub params {
     my ($self, $r) = @_;
 
-    my $data = '';
-
-    my $cgi = CGI->new($r);
-
-    return $cgi->Vars();
+    return Apache2::AuthCookie::Params->new($r);
 }
 
 sub login {
@@ -161,13 +159,13 @@ sub login {
     my $auth_type = $r->auth_type;
     my $auth_name = $r->auth_name;
 
-    my %args = $self->_get_form_data($r);
+    my $params = $self->params($r);
 
     if ($r->method eq 'POST') {
-        $self->_convert_to_get($r, \%args);
+        $self->_convert_to_get($r);
     }
 
-    unless (exists $args{'destination'}) {
+    unless (defined $params->param('destination')) {
         $r->server->log_error("No key 'destination' found in form data");
         $r->subprocess_env('AuthCookieReason', 'no_cookie');
         return $auth_type->login_form($r);
@@ -175,10 +173,11 @@ sub login {
 
     # Get the credentials from the data posted by the client
     my @credentials;
-    for (my $i = 0; exists $args{"credential_$i"}; $i++) {
+    for (my $i = 0; defined $params->param("credential_$i"); $i++) {
         my $key = "credential_$i";
-        $r->server->log_error("$key $args{$key}") if $debug >= 2;
-        push @credentials, $args{$key};
+        my $val = $params->param($key);
+        $r->server->log_error("$key $val") if $debug >= 2;
+        push @credentials, $val;
     }
 
     # save creds in pnotes so login form script can use them if it wants to
@@ -189,7 +188,7 @@ sub login {
     unless ($ses_key) {
         $r->server->log_error("Bad credentials") if $debug >= 2;
         $r->subprocess_env('AuthCookieReason', 'bad_credentials');
-        $r->uri($args{'destination'});
+        $r->uri($params->param('destination'));
         return $auth_type->login_form($r);
     }
 
@@ -203,11 +202,11 @@ sub login {
     $self->handle_cache($r);
 
     if ($debug >= 2) {
-        $r->server->log_error("redirect to $args{destination}");
+        $r->server->log_error("redirect to ", $params->param('destination'));
     }
 
     $r->headers_out->set(
-        "Location" => $self->untaint_destination($args{'destination'}));
+        "Location" => $self->untaint_destination($params->param('destination')));
 
     return HTTP_MOVED_TEMPORARILY;
 }
@@ -273,7 +272,7 @@ sub authenticate {
     if ($ses_key_cookie) {
         my ($auth_user, @args) = $auth_type->authen_ses_key($r, $ses_key_cookie);
 
-        if ($auth_user and scalar @args == 0) {
+        if (!$auth_user->is_blank and scalar @args == 0) {
             # We have a valid session key, so we return with an OK value.
             # Tell the rest of Apache what the authentication method and
             # user is.
@@ -316,10 +315,8 @@ sub login_form {
 
     my $auth_name = $r->auth_name;
 
-    my %args = $self->_get_form_data($r);
-
     if ($r->method eq 'POST') {
-        $self->_convert_to_get($r, \%args);
+        $self->_convert_to_get($r);
     }
 
     # There should be a PerlSetVar directive that gives us the URI of
@@ -331,9 +328,26 @@ sub login_form {
         return SERVER_ERROR;
     }
 
-    $r->custom_response(HTTP_FORBIDDEN, $authen_script);
+    my $status = $self->login_form_status($r);
+    $status = HTTP_FORBIDDEN unless defined $status;
 
-    return HTTP_FORBIDDEN;
+    $r->custom_response($status, $authen_script);
+
+    return $status;
+}
+
+sub login_form_status {
+    my ($self, $r) = @_;
+
+    my $ua = $r->headers_in->get('User-Agent')
+        or return HTTP_FORBIDDEN;
+
+    if (Apache::AuthCookie::Util::understands_forbidden_response($ua)) {
+        return HTTP_FORBIDDEN;
+    }
+    else {
+        return HTTP_OK;
+    }
 }
 
 sub satisfy_is_valid {
@@ -380,8 +394,8 @@ sub authorize {
 
     $r->server->log_error("authorize user=$user type=$auth_type") if $debug >=3;
 
-    unless ($user) {
-        # user is either undef or =0 which means the authentication failed
+    if ($user->is_blank) {
+        # the authentication failed
         $r->server->log_error("No user authenticated", $r->uri);
         return HTTP_FORBIDDEN;
     }
@@ -526,8 +540,6 @@ sub get_cookie_path {
 
 1;
 
-
-
 =pod
 
 =head1 NAME
@@ -536,7 +548,7 @@ Apache2::AuthCookie - Perl Authentication and Authorization via cookies
 
 =head1 VERSION
 
-version 3.18
+version 3.19_01
 
 =head1 SYNOPSIS
 
@@ -896,6 +908,17 @@ specified with the C<PerlSetVar WhatEverLoginScript> configuration
 directive. You can overwrite this method to provide your own
 mechanism.
 
+=item * login_form_status($r)
+
+This method returns the HTTP status code that will be returned with the login
+form response.  The default behaviour is to return HTTP_FORBIDDEN, except for
+some known browsers which ignore HTML content for HTTP_FORBIDDEN responses
+(e.g.: SymbianOS).  You can override this method to return custom codes.
+
+Note that HTTP_FORBIDDEN is the most correct code to return as the given
+request was not authorized to view the requested page.  You should only change
+this if HTTP_FORBIDDEN does not work.
+
 =item * logout()
 
 This is simply a convenience method that unsets the session key for
@@ -1069,9 +1092,19 @@ the same terms as Perl itself.
 
 L<perl(1)>, L<mod_perl(1)>, L<Apache(1)>.
 
+=head1 SOURCE
+
+The development version is on github at L<http://github.com/mschout/apache-authcookie>
+and may be cloned from L<git://github.com/mschout/apache-authcookie.git>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to bug-apache-authcookie@rt.cpan.org or through the web interface at:
+ http://rt.cpan.org/Public/Dist/Display.html?Name=Apache-AuthCookie
+
 =head1 AUTHOR
 
-  Michael Schout <mschout@cpan.org>
+Michael Schout <mschout@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -1080,13 +1113,7 @@ This software is copyright (c) 2000 by Ken Williams.
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
-=head1 BUGS
-
-Please report any bugs or feature requests to bug-apache-authcookie@rt.cpan.org or through the web interface at:
- http://rt.cpan.org/Public/Dist/Display.html?Name=Apache-AuthCookie
-
 =cut
-
 
 __END__
 

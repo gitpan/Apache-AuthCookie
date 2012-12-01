@@ -13,7 +13,9 @@ my %makeconf = (
     'PREREQ_PM'    => {
         'Apache::Test' => 1.35,
         'Test::More'   => 0,
-        'CGI'          => 0
+        'CGI'          => 0,
+        'Class::Load'  => 0.03,
+        'autobox'      => 1.10
     },
     'clean'        => {
         FILES => "@CLEAN_FILES"
