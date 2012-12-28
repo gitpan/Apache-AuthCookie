@@ -1,6 +1,6 @@
 package Apache::AuthCookie::Autobox;
 {
-  $Apache::AuthCookie::Autobox::VERSION = '3.19_01';
+  $Apache::AuthCookie::Autobox::VERSION = '3.19';
 }
 
 # ABSTRACT: Autobox Extensions for AuthCookie
@@ -18,7 +18,7 @@ sub import {
 
 package Apache::AuthCookie::Autobox::Scalar;
 {
-  $Apache::AuthCookie::Autobox::Scalar::VERSION = '3.19_01';
+  $Apache::AuthCookie::Autobox::Scalar::VERSION = '3.19';
 }
 
 sub is_blank {
@@ -37,7 +37,7 @@ Apache::AuthCookie::Autobox - Autobox Extensions for AuthCookie
 
 =head1 VERSION
 
-version 3.19_01
+version 3.19
 
 =head1 SYNOPSIS
 

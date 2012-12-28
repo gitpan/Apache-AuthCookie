@@ -1,6 +1,6 @@
 package Apache2::AuthCookie::Params;
 {
-  $Apache2::AuthCookie::Params::VERSION = '3.19_01';
+  $Apache2::AuthCookie::Params::VERSION = '3.19';
 }
 
 # ABSTRACT: AuthCookie Params Driver for mod_perl 2.x
@@ -45,7 +45,7 @@ Apache2::AuthCookie::Params - AuthCookie Params Driver for mod_perl 2.x
 
 =head1 VERSION
 
-version 3.19_01
+version 3.19
 
 =head1 SYNOPSIS
 

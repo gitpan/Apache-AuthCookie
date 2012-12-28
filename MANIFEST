@@ -2,6 +2,7 @@ Changes
 LICENSE
 MANIFEST
 MANIFEST.SKIP
+MANIFEST.bak
 META.yml
 Makefile.PL
 README
@@ -32,6 +33,7 @@ t/htdocs/docs/protected/get_me.html
 t/htdocs/docs/stimeout/get_me.html
 t/lib/Sample/Apache/AuthCookieHandler.pm
 t/lib/Sample/Apache2/AuthCookieHandler.pm
+t/lib/Sample/AuthCookieHandler.pm
 t/real.t
 t/signature.t
 t/startup.pl

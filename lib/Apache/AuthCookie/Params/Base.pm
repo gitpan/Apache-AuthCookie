@@ -1,6 +1,6 @@
 package Apache::AuthCookie::Params::Base;
 {
-  $Apache::AuthCookie::Params::Base::VERSION = '3.19_01';
+  $Apache::AuthCookie::Params::Base::VERSION = '3.19';
 }
 
 # ABSTRACT: Interanal CGI AuthCookie Params Base Class
@@ -38,7 +38,7 @@ Apache::AuthCookie::Params::Base - Interanal CGI AuthCookie Params Base Class
 
 =head1 VERSION
 
-version 3.19_01
+version 3.19
 
 =head1 SYNOPSIS
 

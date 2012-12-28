@@ -1,6 +1,6 @@
 package Apache::AuthCookie;
 {
-  $Apache::AuthCookie::VERSION = '3.19_01';
+  $Apache::AuthCookie::VERSION = '3.19';
 }
 
 # ABSTRACT: Perl Authentication and Authorization via cookies
@@ -552,7 +552,7 @@ Apache::AuthCookie - Perl Authentication and Authorization via cookies
 
 =head1 VERSION
 
-version 3.19_01
+version 3.19
 
 =head1 SYNOPSIS
 

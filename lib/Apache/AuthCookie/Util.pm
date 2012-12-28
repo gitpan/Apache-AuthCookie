@@ -1,6 +1,6 @@
 package Apache::AuthCookie::Util;
 {
-  $Apache::AuthCookie::Util::VERSION = '3.19_01';
+  $Apache::AuthCookie::Util::VERSION = '3.19';
 }
 
 # ABSTRACT: Internal Utility Functions for AuthCookie
@@ -98,7 +98,7 @@ Apache::AuthCookie::Util - Internal Utility Functions for AuthCookie
 
 =head1 VERSION
 
-version 3.19_01
+version 3.19
 
 =head1 SOURCE
 
