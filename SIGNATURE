@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.70.
+signed via the Module::Signature module, version 0.73.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,27 +14,30 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 10cf60e6ba4d8ca7dcbc7d484e40a9868f0aac02 Changes
-SHA1 c5a20423d4cd77d244aaa2284a66e8bdc02aaedd LICENSE
-SHA1 fba0ca1507cb861f782f8c74dc484cb7c6bacc6d MANIFEST
+SHA1 6df9486793a31f2d1965dbaaacf8d2c747e41a2f Changes
+SHA1 cb36dd242de6d18cd64c4b55444347ebf09e43e7 LICENSE
+SHA1 6ebc9700407c9c7380d0e07509490daa3c9e3c94 MANIFEST
 SHA1 65ac9daeb4b3a197c69eb953500174519565b7b1 MANIFEST.SKIP
-SHA1 4239563c7f4276d94c6d35433cb561bd574a9887 META.yml
+SHA1 6098f3e3a7a438f6cc1dfc9b371a7477b76189d7 META.yml
 SHA1 5b5d0d04447e4814ff7b91584e094175ac84e141 Makefile.PL
 SHA1 b9945378262a25db34dcdba06da956a52876188b README
+SHA1 318d7e4afbba267822042ed421b54fc914176771 README.apache-2.4
 SHA1 ccbc46a0385aabadd1e6f4a22f8d4ebb11b44901 README.modperl2
-SHA1 2b758b3d1e19809f93820eccad49ab615de0b6cb lib/Apache/AuthCookie.pm
-SHA1 35ed58ee9739ffed71e37e9dafcb0e7db0125825 lib/Apache/AuthCookie/Autobox.pm
-SHA1 ff6ee02991e8025f4fb4c51e7886e1f86232a584 lib/Apache/AuthCookie/FAQ.pod
-SHA1 055775e30ffb7918d295400f71927aaa08eebda8 lib/Apache/AuthCookie/Params.pm
-SHA1 10ee65206cbf5ec4612b04b856eb9976670397a4 lib/Apache/AuthCookie/Params/Base.pm
-SHA1 325b016af5c12f35583f99d407d77299a91ae0b6 lib/Apache/AuthCookie/Util.pm
-SHA1 49d2de9cfd13c0970565af13198549a1c8baa2e7 lib/Apache2/AuthCookie.pm
-SHA1 a97386fabd5f94a3304624a90f736acf490f19f5 lib/Apache2/AuthCookie/Params.pm
+SHA1 0130700ff637648a73dc820e0ab8c83b568be173 lib/Apache/AuthCookie.pm
+SHA1 f713d093e3bebfee3af44f80d01f84772c29f2cc lib/Apache/AuthCookie/Autobox.pm
+SHA1 eec3b31449d41b6f0ad4af9073ac0f780eaa63fa lib/Apache/AuthCookie/FAQ.pod
+SHA1 fcfe42314719ba4787fb3acb914176669a16da02 lib/Apache/AuthCookie/Params.pm
+SHA1 c693778e5be13c3d54d85ef5a9dc9747627e7089 lib/Apache/AuthCookie/Params/Base.pm
+SHA1 725b67492de479d56700e326dc9c214aa8a24abf lib/Apache/AuthCookie/Util.pm
+SHA1 ea39e2af86c5df83ad952fd89c29cb43d02eaf95 lib/Apache2/AuthCookie.pm
+SHA1 22df44eefcf6179c742b4aadce1ff2e3e64dfb09 lib/Apache2/AuthCookie/Base.pm
+SHA1 5c09c42a10ec17fc2e4d332936dff74154b7fea3 lib/Apache2/AuthCookie/Params.pm
+SHA1 61a99a0719a0c28c8f0e64dd0782b9d3bc96701b lib/Apache24/AuthCookie.pm
 SHA1 2bf2c365ca98a98a5981e9c9949bf124dcb232fd t/SMOKE
 SHA1 3ac8de46e7bba83f6969caec3c9c14cbd99881cb t/Skeleton/AuthCookieHandler.pm
 SHA1 b1f854e6edecbdd44fc7b8db719e0fe21d9340d1 t/TEST.PL
 SHA1 290c96de9cbeafe5cc6ad7f3a47d706e740ba28f t/autobox.t
-SHA1 05df71f07c9f902f70e248add4f310e49c3f1ae6 t/conf/extra.conf.in
+SHA1 6db9e7a0e29778fbcc2bca1d18f9ffc001508dd1 t/conf/extra.conf.in
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/authall/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/authany/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/cookiename/get_me.html
@@ -47,15 +50,15 @@ SHA1 b37a85d16cbb2342b407f2ba70b8a61aa1ca67bb t/htdocs/docs/protected/echo_user.
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/protected/get_me.html
 SHA1 2156ea84b69ca7fef7b73d72a06c07cb145da7a9 t/htdocs/docs/stimeout/get_me.html
 SHA1 d8a8ea1ebe037a4dea4ad8d1c5b0704b2d43e854 t/lib/Sample/Apache/AuthCookieHandler.pm
-SHA1 fcdda94993dec73cada9a87d5318b05078cb17ab t/lib/Sample/Apache2/AuthCookieHandler.pm
-SHA1 8c5edd0e2ea9cfb38b2aad703d931bbde2298aec t/real.t
+SHA1 eb12d5645e037db1d6b69d1076863eb57ae4a887 t/lib/Sample/Apache2/AuthCookieHandler.pm
+SHA1 e7070de077c6fac42d737d0c6dd7bc70a84d501e t/real.t
 SHA1 61cea839dd94aaaeb301ccac9b83cde4c5c91b42 t/signature.t
 SHA1 e91bf0ef7d63322eaf15ca7d9907c6db47ce90ca t/startup.pl
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2.0.17 (Darwin)
 Comment: GPGTools - http://gpgtools.org
 
-iEUEARECAAYFAlKmPTMACgkQ+CqvSzp9LOxxAgCXRv0gHHkF21jeh372GmWvaXrE
-3ACfX8HvR3fwrl0w5n58sBc6PBYQlTE=
-=Mc01
+iEYEARECAAYFAlNqQhEACgkQ+CqvSzp9LOwTkwCeKSRzYThaTWGW3j7m5GqNxspR
+EnIAnRLyNzwpSQZiVNcz7ifn6WzezKKc
+=RFLF
 -----END PGP SIGNATURE-----
